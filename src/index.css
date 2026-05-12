@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Cairo:wght@200..1000&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "IBM Plex Sans Arabic", "Cairo", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Noto Naskh Arabic", serif;
+  
+  /* Your custom color palette */
+  --color-gold: #b08d2e;
+  --color-page-top: #ffffff;
+  --color-page-bottom: #f5f0e6;
+  --color-panel: #fffdf9;
+  --color-panel-border: #e5dbc7;
+  --color-text-main: #2a2a2a;
+  
+  --radius-panel: 24px;
+}
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+.shimmer {
+  background: linear-gradient(to right, #f6f7f8 4%, #edeef1 25%, #f6f7f8 36%);
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+}
+
+:root {
+  --page-bg-top: #ffffff;
+  --page-bg-bottom: #f5f0e6;
+  --header-bg: #ffffffee;
+  --accent-gold: var(--color-gold);
+  --panel-bg: var(--color-panel);
+  --panel-border: var(--color-panel-border);
+  --panel-pad: clamp(16px, 3vw, 32px);
+}
+
+body {
+  @apply text-text-main;
+  background: linear-gradient(to bottom, var(--page-bg-top), var(--page-bg-bottom));
+  min-height: 100vh;
+  margin: 0;
+  direction: rtl;
+}
+
+.arabic-serif {
+  font-family: var(--font-serif);
+}
+
+.arabic-sans {
+  font-family: var(--font-sans);
+}
+
+/* Base Panel Style from your old CSS */
+.custom-panel {
+  background: var(--panel-bg) !important;
+  border: 1px solid var(--panel-border) !important;
+  border-radius: var(--radius-panel) !important;
+  padding: var(--panel-pad) !important;
+  box-shadow: 0 12px 30px rgba(27, 39, 22, 0.08);
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+/* Header style mimics your site-header */
+.site-header {
+  background: var(--header-bg);
+  backdrop-filter: blur(6px);
+  border-bottom: 3px solid var(--accent-gold);
+}
+
+/* Footer style */
+footer.custom-footer {
+  background: var(--header-bg) !important;
+  border-top: 3px solid var(--accent-gold) !important;
+}
+
+/* Hero Section Typography */
+.hero-heading {
+  color: var(--accent-gold) !important;
+  font-family: var(--font-serif);
+}
+
+.gold-text {
+  color: var(--accent-gold);
+}
+
+.gold-bg {
+  background-color: var(--accent-gold);
+}
+
+.gold-border {
+  border-color: var(--accent-gold);
+}
