@@ -25,6 +25,7 @@ export default function DailyReadingsView() {
   const [data, setData] = useState<KatamarsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>('السنكسار');
 
   const date = new Date();
   const options: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -194,80 +195,123 @@ export default function DailyReadingsView() {
     );
   }
 
+  const tabs = ['السنكسار', ...data.readings.map(r => r.title)];
+
   return (
-    <div className="max-w-5xl mx-auto space-y-12 pb-24 lg:pb-0">
-      <div className="text-center space-y-4">
+    <div className="max-w-5xl mx-auto pb-24 lg:pb-12 text-right" dir="rtl">
+      {/* Header */}
+      <div className="text-center space-y-4 mb-8">
         <div className="inline-flex items-center gap-2 px-4 py-1 bg-gold/10 text-gold rounded-full text-xs font-bold arabic-sans uppercase tracking-widest border border-gold/20">
           <Sun className="w-3 h-3" />
           غذاء الروح
         </div>
         <h1 className="arabic-serif text-5xl lg:text-7xl font-bold text-stone-900 leading-tight">القراءات اليومية</h1>
-        <p className="arabic-sans text-stone-500 text-xl font-medium">{formattedDate}</p>
+        <p className="arabic-sans text-stone-500 text-xl font-medium">{formattedDate} - {data.copticDate}</p>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-8 text-right" dir="rtl">
-        <div className="lg:col-span-2 space-y-8">
-          <section className="custom-panel !p-8 lg:!p-12 space-y-8">
-            <div className="flex items-center gap-3 border-b border-stone-50 pb-6">
-              <FileText className="w-8 h-8 text-gold" />
-              <h2 className="arabic-serif text-3xl font-bold text-stone-800">السنكسار - {data.copticDate}</h2>
-            </div>
-            
-            <div className="space-y-8 arabic-serif text-stone-800 leading-[2.2] text-2xl">
-              <div className="p-8 lg:p-10 bg-gold/5 rounded-[2.5rem] border-r-8 border-gold">
-                <h3 className="font-bold text-3xl text-stone-900 mb-6 leading-normal">{data.synaxarium.title}</h3>
-                <p className="whitespace-pre-line">{data.synaxarium.text}</p>
+      {/* Persistent Verse/Coptic Date on Mobile/Desktop */}
+      <div className="grid lg:grid-cols-3 gap-8 mb-8">
+         <div className="lg:col-span-2">
+            <div className="bg-gold rounded-[2rem] p-6 text-white flex flex-col md:flex-row items-center gap-6 shadow-lg border border-gold/20">
+              <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center shrink-0">
+                <Quote className="w-8 h-8 text-white/50" />
+              </div>
+              <div className="space-y-2 text-center md:text-right">
+                <p className="arabic-serif text-xl md:text-2xl leading-relaxed">"{data.dailyVerse.text}"</p>
+                <p className="arabic-sans text-sm font-bold opacity-80">{data.dailyVerse.ref}</p>
               </div>
             </div>
-          </section>
+         </div>
+         <div className="hidden lg:block">
+            <div className="custom-panel !p-6 h-full flex flex-col justify-center">
+              <h3 className="arabic-serif text-xl font-bold text-stone-800 mb-2">النتيجة القبطية</h3>
+              <p className="arabic-serif text-3xl font-bold text-gold">{data.copticDate}</p>
+            </div>
+         </div>
+      </div>
 
-          <div className="grid md:grid-cols-1 gap-8">
-            {data.readings.map((reading, i) => (
-              <motion.div 
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="custom-panel !p-8 lg:!p-10 space-y-6"
-              >
-                <div className="flex justify-between items-start">
-                  <h3 className="arabic-serif text-3xl font-bold text-gold leading-normal">{reading.title}</h3>
-                  <span className="text-[10px] font-bold text-stone-400 bg-stone-50 px-2 py-1 rounded">نص مختار</span>
-                </div>
-                <div className="arabic-sans text-base font-bold text-stone-400">{reading.ref}</div>
-                <p className="arabic-serif text-stone-700 leading-[2.2] text-2xl relative pr-10">
-                  <Quote className="absolute right-0 top-0 w-8 h-8 text-stone-100 -z-10" />
-                  "{reading.text}"
-                </p>
-              </motion.div>
-            ))}
-          </div>
+      {/* Sticky Navigation Tabs */}
+      <div className="sticky top-20 z-30 mb-8 -mx-4 lg:mx-0 px-4 lg:px-0">
+        <div className="bg-white/90 backdrop-blur-md border border-stone-100 rounded-3xl p-2 shadow-xl flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth">
+          {tabs.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => {
+                setActiveTab(tab);
+                window.scrollTo({ top: 300, behavior: 'smooth' });
+              }}
+              className={`whitespace-nowrap px-6 py-3 rounded-2xl arabic-serif text-lg font-bold transition-all ${
+                activeTab === tab 
+                  ? 'bg-gold text-white shadow-md' 
+                  : 'text-stone-500 hover:bg-stone-50'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid lg:grid-cols-4 gap-8">
+        <div className="lg:col-span-3">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              {activeTab === 'السنكسار' ? (
+                <section className="custom-panel !p-8 lg:!p-12 space-y-8">
+                  <div className="flex items-center gap-3 border-b border-stone-50 pb-6">
+                    <FileText className="w-8 h-8 text-gold" />
+                    <h2 className="arabic-serif text-3xl font-bold text-stone-800">السنكسار - {data.copticDate}</h2>
+                  </div>
+                  
+                  <div className="space-y-8 arabic-serif text-stone-800 leading-[2.2] text-2xl">
+                    <div className="p-8 lg:p-10 bg-gold/5 rounded-[2.5rem] border-r-8 border-gold">
+                      <h3 className="font-bold text-3xl text-stone-900 mb-6 leading-normal">{data.synaxarium.title}</h3>
+                      <p className="whitespace-pre-line">{data.synaxarium.text}</p>
+                    </div>
+                  </div>
+                </section>
+              ) : (
+                data.readings.filter(r => r.title === activeTab).map((reading, i) => (
+                  <div 
+                    key={i}
+                    className="custom-panel !p-8 lg:!p-12 space-y-8"
+                  >
+                    <div className="flex justify-between items-start border-b border-stone-50 pb-6">
+                      <div className="flex items-center gap-3">
+                        <Book className="w-8 h-8 text-gold" />
+                        <h3 className="arabic-serif text-3xl font-bold text-stone-800">{reading.title}</h3>
+                      </div>
+                      <span className="text-xs font-bold text-gold bg-gold/10 px-4 py-1 rounded-full arabic-sans">نص مختار</span>
+                    </div>
+                    <div className="arabic-sans text-xl font-bold text-stone-400">{reading.ref}</div>
+                    <p className="arabic-serif text-stone-700 leading-[2.2] text-2xl lg:text-3xl relative pr-4 lg:pr-8 whitespace-pre-line">
+                      "{reading.text}"
+                    </p>
+                  </div>
+                ))
+              )}
+            </motion.div>
+          </AnimatePresence>
         </div>
 
-        <div className="space-y-8">
-          <div className="bg-gold rounded-[2.5rem] p-8 lg:p-10 text-white space-y-6 shadow-xl">
-            <h3 className="arabic-serif text-3xl font-bold">آية اليوم</h3>
-            <div className="p-8 bg-white/10 rounded-[2rem] border border-white/20 text-3xl arabic-serif leading-[1.8]">
-              "{data.dailyVerse.text}"
-              <div className="text-right text-base mt-6 font-bold opacity-80 arabic-sans">{data.dailyVerse.ref}</div>
-            </div>
+        {/* Sidebar Info/Quick Links */}
+        <div className="lg:col-span-1 space-y-6">
+          <div className="custom-panel !p-6 space-y-4">
+            <h4 className="arabic-serif font-bold text-stone-800 border-b border-stone-50 pb-2">عن القراءات</h4>
+            <p className="arabic-sans text-xs text-stone-500 leading-relaxed">
+              تتغير القراءات اليومية تلقائياً حسب طقس الكنيسة وترتيب القطمارس (Katamars).
+            </p>
           </div>
-
-          <div className="custom-panel !p-8 space-y-6">
-            <h3 className="arabic-serif text-2xl font-bold text-stone-800">النتيجة القبطية</h3>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center bg-gold/5 p-6 rounded-[1.5rem]">
-                <span className="arabic-sans text-stone-500">اليوم القبطي</span>
-                <span className="arabic-serif font-bold text-gold text-2xl">{data.copticDate}</span>
-              </div>
-              <div className="flex justify-between items-center bg-stone-50 p-4 rounded-2xl text-stone-400 text-xs text-center border-t border-stone-100 pt-4 leading-relaxed arabic-sans">
-                تتغير القراءات يومياً حسب ترتيب القطمارس الكنسي.
-              </div>
-            </div>
-          </div>
+          
         </div>
       </div>
     </div>
   );
 }
+
