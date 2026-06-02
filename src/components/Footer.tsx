@@ -1,5 +1,5 @@
 import { MapPin, Phone, Mail, ChevronLeft, Facebook, Youtube, Instagram } from 'lucide-react';
-import logoImg from '../assets/images/logo.png';
+import logoImg from '../images/logo.png';
 
 interface FooterProps {
   onTabChange: (tab: string) => void;
@@ -50,13 +50,28 @@ export default function Footer({ onTabChange }: FooterProps) {
               بيت الله المفتوح للجميع.. منارة روحية في قلب شبرا العريق، تخدم النفوس بروح المحبة والتواضع وتقدم الأسرار المقدسة والتعليم المستقيم.
             </p>
             <div className="flex gap-4">
-              <a href="#" className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center hover:bg-gold transition-colors text-white">
+              <a 
+                href="https://www.facebook.com/share/1CFbeNWTUm/?mibextid=wwXIfr" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center hover:bg-gold transition-colors text-white"
+              >
                 <Facebook className="w-5 h-5" />
               </a>
-              <a href="#" className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center hover:bg-gold transition-colors text-white">
+              <a 
+                href="https://www.youtube.com/@stmarkshoubra" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center hover:bg-gold transition-colors text-white"
+              >
                 <Youtube className="w-5 h-5" />
               </a>
-              <a href="#" className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center hover:bg-gold transition-colors text-white">
+              <a 
+                href="https://www.instagram.com/saintmarkchurchshoubra?igsh=MXNyNGRhcjBkajV2eQ==" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center hover:bg-gold transition-colors text-white"
+              >
                 <Instagram className="w-5 h-5" />
               </a>
             </div>

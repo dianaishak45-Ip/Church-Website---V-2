@@ -1,10 +1,12 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, collection, addDoc, serverTimestamp, doc, getDocFromServer } from 'firebase/firestore';
+import { initializeFirestore, collection, addDoc, serverTimestamp, doc, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, (firebaseConfig as any).firestoreDatabaseId);
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+}, (firebaseConfig as any).firestoreDatabaseId);
 export const auth = getAuth();
 
 export { collection, addDoc, serverTimestamp };
@@ -52,13 +54,22 @@ export function handleFirestoreError(error: any, operation: FirestoreErrorInfo['
   throw new Error(JSON.stringify(errorInfo));
 }
 
-// CRITICAL CONSTRAINT: Test connection on boot
+// CRITICAL CONSTRAINT: Test connection on boot with a responsive timeout
 async function testConnection() {
   try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
+    // 2-second timeout to prevent 10s hangs in offline/unprovisioned states
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Firebase connection timeout")), 2000)
+    );
+    await Promise.race([
+      getDocFromServer(doc(db, 'test', 'connection')),
+      timeoutPromise
+    ]);
   } catch (error) {
-    if(error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration.");
+    if (error instanceof Error) {
+      console.warn("[Firebase] Offline or unconfigured. Continuing in graceful backup mode:", error.message);
+    } else {
+      console.warn("[Firebase] Offline or unconfigured. Continuing in graceful backup mode.");
     }
   }
 }

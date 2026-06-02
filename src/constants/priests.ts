@@ -1,24 +1,26 @@
-import frMarkosImg from '../assets/images/fr_markos_dawoud.png';
-import frEstafanosImg from '../assets/images/fr_estafanos_azer.png';
-import frYohanaImg from '../assets/images/fr_yohana_girgis.jpg';
-import frYouhanaMahfouzImg from '../assets/images/fr_youhana_mahfouz.jpg';
-import frYousefRizkImg from '../assets/images/fr_youssef_youssef.png';
-import frMorkosMonirImg from '../assets/images/fr_morkos_monir.png';
-import frMataJosephImg from '../assets/images/fr_mata_joseph.png';
-import frYouhanaSaadImg from '../assets/images/fr_youhana_saad.png';
-import frLokaFahmyImg from '../assets/images/fr_loka_fahmy.png';
-import frMinaMikhail from '../assets/images/fr_mina_mikhail.png';
-import frMikhailIbrahimImg from '../assets/images/fr_mikhail_ibrahim.png';
-import frMikhailNaguibImg from '../assets/images/fr_mikhail_naguib.png';
-import frBemanGeorgeImg from '../assets/images/fr_beman_george.png';
-import frMorkosFathyImg from '../assets/images/fr_morkos_fathy.png';
-import frLukaKostantinImg from '../assets/images/fr_luka_kostantin.png';
-import frMikhailMakarImg from '../assets/images/fr_mikhail_makar.png';
-import frBarsoumBoshraImg from '../assets/images/fr_barsoum_boshra.png';
-import frKyrillosKamalImg from '../assets/images/fr_kyrillos_kamal.png';
-import frAntoniosMofeedImg from '../assets/images/fr_antonios_mofeed.png';
-import frBishoyAhdyImg from '../assets/images/fr_bishoy_ahdy.png';
+import frMarkosImg from '../images/fr_markos_dawoud.png';
+import frEstafanosImg from '../images/fr_estafanos_azer.png';
+import frYoussefImg from '../images/fr_youssef_youssef.png';
+import frMorkosMonirImg from '../images/fr_morkos_monir.png';
+import frMataJosephImg from '../images/fr_mata_joseph.png';
+import frYouhanaSaadImg from '../images/fr_youhana_saad.jpeg';
+import frLokaFahmyImg from '../images/fr_loka_fahmy.png';
+import frMinaMikhail from '../images/fr_mina_mikhail.png';
+import frMikhailIbrahimImg from '../images/fr_mikhail_ibrahim.png';
+import frMikhailNaguibImg from '../images/fr_mikhail_naguib.png';
+import frBemanGeorgeImg from '../images/fr_beman_george.png';
+import frMorkosFathyImg from '../images/fr_morkos_fathy.png';
+import frLukaKostantinImg from '../images/fr_luka_kostantin.png';
+import frMikhailMakarImg from '../images/fr_mikhail_makar.png';
+import frBarsoumBoshraImg from '../images/fr_barsoum_boshra.png';
+import frKyrillosKamalImg from '../images/fr_kyrillos_kamal.png';
+import frAntoniosMofeedImg from '../images/fr_antonios_mofeed.png';
+import frBishoyAhdyImg from '../images/fr_bishoy_ahdy.png';
+import frYouhanaMahfouzImg from '../images/fr_youhana_mahfouz.jpg';
+import frYohanaImg from '../images/fr_yohana_girgis.jpg';
+import frPhilopaterSamyImg from '../images/fr_philopater_samy.jpg';
 
+// missing files, use undefined
 const PRIEST_PLACEHOLDER = undefined;
 
 export interface Priest {
@@ -155,7 +157,7 @@ export const CLERGY_DATA: Priest[] = [
     promotion: '',
     status: 'حالي',
     note: '',
-    image: frYousefRizkImg
+    image: frYoussefImg
   },
   {
     name: 'أبونا القس كيرلس كمال فخري سوريال',
@@ -223,18 +225,20 @@ export const CLERGY_DATA: Priest[] = [
   },
   {
     name: 'أبونا القس بيشوي عهدى',
-    ordination: '',
+    ordination: '26 نوفمبر 2022 م.',
     promotion: '',
     status: 'حالي',
     note: '',
-    image: frBishoyAhdyImg
+    image: frBishoyAhdyImg,
+    title: '',
+    summary: []
   },
   {
     name: 'أبونا القس فيلوباتير سامي',
-    ordination: '',
+    ordination: '26 نوفمبر 2022 م.',
     promotion: '',
     status: 'حالي',
     note: '',
-    image: PRIEST_PLACEHOLDER
+    image: frPhilopaterSamyImg
   }
 ];

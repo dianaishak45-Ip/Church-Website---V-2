@@ -6,6 +6,7 @@ interface YoutubeData {
   videoId: string;
   title: string;
   isLive: boolean;
+  isPlaylist?: boolean;
   status: string;
 }
 
@@ -19,17 +20,44 @@ export const LiveStreamWidget: React.FC = () => {
       const response = await fetch('/api/youtube/live');
       if (response.ok) {
         const result = await response.json();
+        // The API returns videoId properly when live or not
         setData(result);
         setError(false);
-      } else {
-        setError(true);
+        setLoading(false);
+        return;
       }
     } catch (err) {
-      console.error('Error fetching live stream:', err);
-      setError(true);
-    } finally {
-      setLoading(false);
+      console.warn('Live stream API not available, using client-side dynamic fallback...', err);
     }
+
+    // Absolute fallback - dynamically varies twice a day
+    const FALLBACK_VIDEOS = [
+      { videoId: 'i6VfdCQAAYw', isPlaylist: false, title: 'قداس عيد الميلاد 1987 - القمص إسطفانوس عازر والقمص لوقا قسطنطين', status: 'أرشيف القداسات التاريخية' },
+      { videoId: 'EXhXc86jP5M', isPlaylist: false, title: 'قداس عيد القيامة 1982 ج1 - ألبوم تراث الكنيسة', status: 'أرشيف القداسات التاريخية' },
+      { videoId: '46xBUj-G80Y', isPlaylist: false, title: 'قداس عيد القيامة 1982 ج2 - ألبوم تراث الكنيسة', status: 'أرشيف القداسات التاريخية' },
+      { videoId: 'zLsEvABonTA', isPlaylist: false, title: 'التوزيع - القمص إسطفانوس عازر - يوم أحد الشعانين لعام 1987', status: 'ألحان وتراث كنسي' },
+      { videoId: 'B59t0ih8ddg', isPlaylist: false, title: 'صلاة اللقان - خميس العهد سنة 1987 - القمص إسطفانوس عازر', status: 'صلوات طقسية نادرة' },
+      { videoId: 'enY5_FbVXk4', isPlaylist: false, title: 'جزء من القداس الإلهي (ارحمنا) - القمص إسطفانوس عازر', status: 'تراث وألحان الآباء' },
+      { videoId: 'k3Vqx6WM1A0', isPlaylist: false, title: 'عظة برمون عيد الغطاس - الحبر الجليل الأنبا أنجيلوس أسقف عام شبرا الشمالية', status: 'تعليم وعظات حية' },
+      { videoId: 'I3apMyTGla8', isPlaylist: false, title: 'قداس عيد القيامة المجيد ٢٠١٩ - كنيسة مارمرقس بشبرا', status: 'قداسات الأعياد' },
+      { videoId: 'TPbibrU0Ncc', isPlaylist: false, title: 'قداس عيد الميلاد المجيد بكنيسة مارمرقس بشبرا لعام 2016', status: 'قداسات الأعياد' }
+    ];
+
+    const now = new Date();
+    const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / (24 * 60 * 60 * 1000));
+    const dayPeriod = now.getHours() >= 12 ? 1 : 0;
+    const fallbackIndex = (dayOfYear * 2 + dayPeriod) % FALLBACK_VIDEOS.length;
+    const selectedFallback = FALLBACK_VIDEOS[fallbackIndex];
+
+    setData({
+      videoId: selectedFallback.videoId,
+      isLive: false,
+      isPlaylist: selectedFallback.isPlaylist || false,
+      title: selectedFallback.title,
+      status: selectedFallback.status
+    });
+    setError(false);
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -84,14 +112,19 @@ export const LiveStreamWidget: React.FC = () => {
       </div>
 
       <div className="relative w-full max-w-4xl mx-auto aspect-video rounded-[2rem] overflow-hidden shadow-2xl border-4 border-white/50 bg-black">
-        <iframe
-          src={`https://www.youtube.com/embed/${data.videoId}?autoplay=${data.isLive ? '1' : '0'}&rel=0`}
-          title={data.title || "YouTube video"}
-          className="absolute inset-0 w-full h-full"
-          allowFullScreen
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          referrerPolicy="strict-origin-when-cross-origin"
-        />
+        {data.videoId ? (
+          <iframe
+            src={data.isPlaylist ? `https://www.youtube.com/embed/videoseries?list=${data.videoId}&rel=0` : `https://www.youtube.com/embed/${data.videoId}?autoplay=${data.isLive ? '1' : '0'}&rel=0`}
+            title={data.title || "YouTube video"}
+            className="absolute inset-0 w-full h-full"
+            allowFullScreen
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-stone-900">
+            <p className="arabic-sans text-stone-400">الفيديو غير متوفر حالياً</p>
+          </div>
+        )}
       </div>
 
       {!data.isLive && (

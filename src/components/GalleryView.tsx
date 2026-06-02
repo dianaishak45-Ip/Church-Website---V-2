@@ -1,45 +1,113 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, ZoomIn, ChevronRight, ChevronLeft, Maximize2 } from 'lucide-react';
+import { useSEO } from '../hooks/useSEO';
 
-const GALLARY_IMAGES = [
-  { id: '1', url: 'https://picsum.photos/seed/church1/1200/800', title: 'الباب الرئيسي', category: 'المبنى' },
-  { id: '2', url: 'https://picsum.photos/seed/church2/800/1200', title: 'الأيقونة الأثرية', category: 'الفن القبطي' },
-  { id: '3', url: 'https://picsum.photos/seed/church3/1200/1200', title: 'القبة الرئيسية', category: 'المبنى' },
-  { id: '4', url: 'https://picsum.photos/seed/church4/1200/800', title: 'المذبح المقدس', category: 'الداخل' },
-  { id: '5', url: 'https://picsum.photos/seed/church5/800/1200', title: 'خدمة التربية الكنسية', category: 'الأنشطة' },
-  { id: '6', url: 'https://picsum.photos/seed/church6/1200/800', title: 'صلاة القداس', category: 'الروحانيات' },
-  { id: '7', url: 'https://picsum.photos/seed/church7/800/1200', title: 'منارة الكنيسة', category: 'المبنى' },
-  { id: '8', url: 'https://picsum.photos/seed/church8/1200/1200', title: 'كورال الكنيسة', category: 'الأنشطة' },
-  { id: '9', url: 'https://picsum.photos/seed/church9/1200/800', title: 'الحدائق الخارجية', category: 'الخارج' },
+interface GalleryItem {
+  id: string;
+  url: string;
+  title: string;
+  category: string;
+}
+
+const FALLBACK_GALLERY_IMAGES: GalleryItem[] = [
+  { id: 'f_up1', url: '/gallery/Gemini_Generated_Image_99hq7m99hq7m99hq.png', title: 'صورة تذكارية تاريخية من أرشيف الكنيسة', category: 'معرض الكنيسة' },
+  { id: 'f_up2', url: '/gallery/Gemini_Generated_Image_rxtogerxtogerxto.png', title: 'أيقونة القديس مارمرقس الرسولي شفيع الكنيسة', category: 'معرض الأيقونات' }
 ];
 
 export default function GalleryView() {
+  useSEO({
+    title: 'معرض الصور - كنيسة مارمرقس بشبرا',
+    description: 'شاهد ألبوم صور كنيسة القديس مارمرقس الرسولي بشبرا، جولة بصرية في رحاب الكنيسة والفن القبطي.',
+    keywords: 'صور الكنيسة, معرض الصور, كنيسة مارمرقس, الفن القبطي, أيقونات قبطية',
+  });
+
+  const [galleryImages, setGalleryImages] = useState<GalleryItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedImage, setSelectedImage] = useState<typeof GALLARY_IMAGES[0] | null>(null);
+  const [selectedImage, setSelectedImage] = useState<GalleryItem | null>(null);
   const [direction, setDirection] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const nextSlide = () => {
-    setDirection(1);
-    setCurrentIndex((prev) => (prev + 1) % GALLARY_IMAGES.length);
-  };
-
-  const prevSlide = () => {
-    setDirection(-1);
-    setCurrentIndex((prev) => (prev - 1 + GALLARY_IMAGES.length) % GALLARY_IMAGES.length);
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    const img = e.currentTarget;
+    const currentSrc = img.src;
+    
+    if (currentSrc.includes('Gemini_Generated_Image_99hq7m99hq7m99hq.png')) {
+      img.src = '/gallery/Gemini_Generated_Image_rxtogerxtogerxto.png';
+    }
   };
 
   useEffect(() => {
-    if (isAutoPlaying) {
+    // Dynamic fetch from the gallery folder API
+    fetch('/api/gallery')
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to load gallery');
+        return res.json();
+      })
+      .then((files: string[]) => {
+        if (files && files.length > 0) {
+          // If there are custom user images, filter out Gemini placeholders
+          const hasCustomImages = files.some(file => !file.toLowerCase().includes('gemini_generated_image'));
+          const filteredFiles = hasCustomImages
+            ? files.filter(file => !file.toLowerCase().includes('gemini_generated_image'))
+            : files;
+
+          const mappedItems: GalleryItem[] = filteredFiles.map((file, idx) => {
+            // Convert file name into pretty title: "church_gate.jpg" -> "Church Gate"
+            let prettyTitle = file
+              .substring(0, file.lastIndexOf('.'))
+              .replace(/[_-]/g, ' ')
+              .trim();
+              
+            // A few translations for standard tags if they exist, or just capital/arabic case
+            if (prettyTitle.toLowerCase().includes('gemini generated image')) {
+              prettyTitle = `صورة فنية من الكنيسة رقم ${idx + 1}`;
+            }
+
+            return {
+              id: `dynamic-${idx}`,
+              url: `/gallery/${file}`,
+              title: prettyTitle,
+              category: 'معرض الكنيسة'
+            };
+          });
+          setGalleryImages(mappedItems);
+        } else {
+          setGalleryImages(FALLBACK_GALLERY_IMAGES);
+        }
+      })
+      .catch((err) => {
+        console.warn('Cannot fetch dynamic gallery, falling back:', err);
+        setGalleryImages(FALLBACK_GALLERY_IMAGES);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, []);
+
+  const nextSlide = () => {
+    if (galleryImages.length === 0) return;
+    setDirection(1);
+    setCurrentIndex((prev) => (prev + 1) % galleryImages.length);
+  };
+
+  const prevSlide = () => {
+    if (galleryImages.length === 0) return;
+    setDirection(-1);
+    setCurrentIndex((prev) => (prev - 1 + galleryImages.length) % galleryImages.length);
+  };
+
+  useEffect(() => {
+    if (isAutoPlaying && galleryImages.length > 1) {
       timerRef.current = setInterval(nextSlide, 5000);
     }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isAutoPlaying, currentIndex]);
+  }, [isAutoPlaying, currentIndex, galleryImages]);
 
   const variants = {
     enter: (direction: number) => ({
@@ -102,88 +170,88 @@ export default function GalleryView() {
             }}
             className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing"
           >
-            <img 
-              src={GALLARY_IMAGES[currentIndex].url} 
-              alt={GALLARY_IMAGES[currentIndex].title}
-              className="w-full h-full object-cover pointer-events-none"
-              referrerPolicy="no-referrer"
-              loading="lazy"
-            />
-            
-            {/* Image Overlay Info */}
-            <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-stone-900/20 flex flex-col justify-end p-8 md:p-16 text-right">
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="space-y-2"
-              >
-                <div className="text-gold font-bold arabic-sans text-sm tracking-widest uppercase">
-                  {GALLARY_IMAGES[currentIndex].category}
+            {galleryImages.length > 0 && (
+              <>
+                <img 
+                  src={galleryImages[currentIndex].url} 
+                  alt={galleryImages[currentIndex].title}
+                  className="w-full h-full object-cover pointer-events-none"
+                  referrerPolicy="no-referrer"
+                  loading="lazy"
+                  onError={handleImageError}
+                />
+                
+                {/* Minimalist Floating Maximize Button */}
+                <div className="absolute bottom-6 right-6 z-10">
+                  <button 
+                    onClick={() => setSelectedImage(galleryImages[currentIndex])}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-stone-900/60 hover:bg-stone-900/85 backdrop-blur-md border border-white/10 text-white rounded-full shadow-lg transition-all active:scale-95 text-xs font-bold arabic-sans"
+                  >
+                    <Maximize2 className="w-3.5 h-3.5 text-amber-400" />
+                    تكبير الصورة
+                  </button>
                 </div>
-                <h2 className="arabic-serif text-3xl md:text-5xl font-bold text-white shadow-stone-900">
-                  {GALLARY_IMAGES[currentIndex].title}
-                </h2>
-                <button 
-                  onClick={() => setSelectedImage(GALLARY_IMAGES[currentIndex])}
-                  className="mt-4 inline-flex items-center gap-2 px-6 py-2 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-full hover:bg-white/20 transition-colors arabic-sans font-bold text-sm"
-                >
-                  <Maximize2 className="w-4 h-4" />
-                  تكبير الصورة
-                </button>
-              </motion.div>
-            </div>
+              </>
+            )}
           </motion.div>
         </AnimatePresence>
 
         {/* Navigation Buttons */}
-        <button 
-          onClick={prevSlide}
-          className="absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white flex items-center justify-center hover:bg-white/30 transition-all z-20 md:opacity-0 md:group-hover:opacity-100"
-        >
-          <ChevronRight className="w-6 h-6" />
-        </button>
-        <button 
-          onClick={nextSlide}
-          className="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white flex items-center justify-center hover:bg-white/30 transition-all z-20 md:opacity-0 md:group-hover:opacity-100"
-        >
-          <ChevronLeft className="w-6 h-6" />
-        </button>
+        {galleryImages.length > 1 && (
+          <>
+            <button 
+              onClick={prevSlide}
+              className="absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white flex items-center justify-center hover:bg-white/30 transition-all z-20 md:opacity-0 md:group-hover:opacity-100"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+            <button 
+              onClick={nextSlide}
+              className="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white flex items-center justify-center hover:bg-white/30 transition-all z-20 md:opacity-0 md:group-hover:opacity-100"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+          </>
+        )}
 
         {/* Progress Dots */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3 z-20">
-          {GALLARY_IMAGES.map((_, idx) => (
+        {galleryImages.length > 1 && (
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3 z-20">
+            {galleryImages.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => {
+                  setDirection(idx > currentIndex ? 1 : -1);
+                  setCurrentIndex(idx);
+                }}
+                className={`h-1.5 transition-all duration-300 rounded-full ${
+                  idx === currentIndex ? 'w-8 bg-gold shadow-[0_0_15px_rgba(176,141,46,0.6)]' : 'w-2 bg-white/40'
+                }`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Thumbnails Grid */}
+      {galleryImages.length > 1 && (
+        <div className="grid grid-cols-5 md:grid-cols-9 gap-4 px-4 overflow-x-auto pb-4 scrollbar-hide">
+          {galleryImages.map((img, idx) => (
             <button
-              key={idx}
+              key={img.id}
               onClick={() => {
                 setDirection(idx > currentIndex ? 1 : -1);
                 setCurrentIndex(idx);
               }}
-              className={`h-1.5 transition-all duration-300 rounded-full ${
-                idx === currentIndex ? 'w-8 bg-gold shadow-[0_0_15px_rgba(176,141,46,0.6)]' : 'w-2 bg-white/40'
+              className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all shrink-0 ${
+                idx === currentIndex ? 'border-amber-500 scale-110 shadow-lg' : 'border-transparent opacity-60 hover:opacity-100'
               }`}
-            />
+            >
+              <img src={img.url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" onError={handleImageError} />
+            </button>
           ))}
         </div>
-      </div>
-
-      {/* Thumbnails Grid */}
-      <div className="grid grid-cols-5 md:grid-cols-9 gap-4 px-4 overflow-x-auto pb-4 scrollbar-hide">
-        {GALLARY_IMAGES.map((img, idx) => (
-          <button
-            key={img.id}
-            onClick={() => {
-              setDirection(idx > currentIndex ? 1 : -1);
-              setCurrentIndex(idx);
-            }}
-            className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all shrink-0 ${
-              idx === currentIndex ? 'border-amber-500 scale-110 shadow-lg' : 'border-transparent opacity-60 hover:opacity-100'
-            }`}
-          >
-            <img src={img.url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" />
-          </button>
-        ))}
-      </div>
+      )}
 
       {/* Lightbox */}
       <AnimatePresence>
@@ -212,6 +280,7 @@ export default function GalleryView() {
                 alt={selectedImage.title} 
                 className="max-h-[85vh] w-full object-contain rounded-2xl shadow-2xl"
                 referrerPolicy="no-referrer"
+                onError={handleImageError}
               />
               <div className="text-center text-white space-y-2">
                 <h2 className="arabic-serif text-3xl font-bold">{selectedImage.title}</h2>

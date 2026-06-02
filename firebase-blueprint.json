@@ -1,4 +1,47 @@
 {
-  "entities": {},
-  "firestore": {}
+  "entities": {
+    "suggestion": {
+      "title": "Suggestion",
+      "description": "User suggestions and contact messages",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Full name of the user"
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the sender"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Phone number of the sender"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Subject of the message"
+        },
+        "message": {
+          "type": "string",
+          "description": "Body message or suggestion"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of creation"
+        }
+      },
+      "required": [
+        "name",
+        "message",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "suggestions/{suggestionId}": {
+      "schema": "suggestion",
+      "description": "Store incoming user suggestions and contact submissions"
+    }
+  }
 }

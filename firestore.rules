@@ -11,5 +11,23 @@ service cloud.firestore {
     function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
     function incoming() { return request.resource.data; }
     function serverTime() { return request.time; }
+
+    // Validation for Suggestion
+    function isValidSuggestion(data) {
+      return data.keys().hasAll(['name', 'message', 'createdAt'])
+        && data.keys().size() >= 3
+        && data.keys().size() <= 6
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && (!data.keys().hasAny(['email']) || (data.email is string && data.email.size() <= 100))
+        && (!data.keys().hasAny(['phone']) || (data.phone is string && data.phone.size() <= 30))
+        && (!data.keys().hasAny(['subject']) || (data.subject is string && data.subject.size() <= 150))
+        && data.message is string && data.message.size() > 0 && data.message.size() <= 2000
+        && data.createdAt == request.time;
+    }
+
+    match /suggestions/{suggestionId} {
+      allow create: if isValidId(suggestionId) && isValidSuggestion(incoming());
+      allow read, update, delete: if false;
+    }
   }
 }

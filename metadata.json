@@ -1,6 +1,6 @@
 {
-  "name": "Church-Website-main",
-  "description": "الموقعي الرسمي لكنيسة مارمرقس الرسولي بشبرا، استعرض تاريخ الكنيسة ومواعيد القداسات والخدمات واحجز القاعات والخدمات الكنسية المختلفة.",
+  "name": "St Mark Church Shoubra",
+  "description": "The official website of St. Mark Coptic Orthodox Church in Shoubra.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

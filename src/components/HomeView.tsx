@@ -1,13 +1,24 @@
 import { motion } from 'motion/react';
-import { MapPin, Phone, BookOpen, ChevronLeft, Train, Bus, Car, Info } from 'lucide-react';
+import { MapPin, Phone, BookOpen, ChevronLeft, Train, Bus, Car, Info, MessageSquare } from 'lucide-react';
 import { LiveStreamWidget } from './LiveStreamWidget';
-import heroImg from '../assets/images/hero.jpg';
+import { AnnouncementSlider } from './AnnouncementSlider';
+import heroImg from '../images/hero.jpg';
+import { useSEO } from '../hooks/useSEO';
+
+const churchInteriorImg = heroImg; // Using same hero for now as fallback or specific interior if exists
 
 interface HomeViewProps {
   onTabChange?: (tab: string) => void;
+  onOpenSuggestions?: () => void;
 }
 
-export default function HomeView({ onTabChange }: HomeViewProps) {
+export default function HomeView({ onTabChange, onOpenSuggestions }: HomeViewProps) {
+  useSEO({
+    title: 'الرئيسية - كنيسة مارمرقس بشبرا',
+    description: 'مرحباً بكم في كنيسة القديس مارمرقس الرسولي بشبرا. بيت الله المفتوح للجميع.',
+    keywords: 'كنيسة, مارمرقس, شبرا, الكنيسة القبطية الأرثوذكسية, قراءات اليوم, بث مباشر',
+  });
+
   return (
     <div className="space-y-12 pb-24 lg:pb-12 max-w-[1400px] mx-auto px-4">
       {/* Hero Section */}
@@ -67,6 +78,11 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
         </button>
       </section>
 
+      {/* Announcements Section */}
+      <section>
+        <AnnouncementSlider />
+      </section>
+
       {/* Live Stream Section */}
       <section className="custom-panel !p-6 lg:!p-10">
         <LiveStreamWidget />
@@ -103,6 +119,27 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
         </div>
       </section>
 
+      {/* Suggestions and Contact CTA Section */}
+      <section className="custom-panel !p-6 lg:!p-10 flex flex-col md:flex-row items-center gap-8 group border border-gold/20 rounded-[2.5rem] relative overflow-hidden bg-stone-50">
+        <div className="absolute top-0 right-0 w-24 h-24 bg-gold/5 rounded-full blur-xl pointer-events-none" />
+        <div className="w-16 h-16 lg:w-20 lg:h-20 bg-gold/10 text-gold rounded-3xl flex items-center justify-center shrink-0">
+          <MessageSquare className="w-8 h-8 lg:w-10 lg:h-10 animate-pulse" />
+        </div>
+        <div className="flex-1 space-y-2 text-center md:text-right" dir="rtl">
+          <h2 className="arabic-serif text-xl lg:text-2xl font-bold text-stone-900">صندوق الاقتراحات والتواصل السريع</h2>
+          <p className="arabic-sans text-stone-500 text-sm leading-relaxed">
+            مشاركتكم تهمّنا.. يسعدنا استقبال مقترحاتكم البنّاءة لتطوير خدمات الكنيسة والأنشطة المختلفة، أو إرسال طلب صلاة لرفع الأسماء بالقداس الإلهي.
+          </p>
+        </div>
+        <button 
+          onClick={onOpenSuggestions}
+          className="px-6 py-3 lg:px-8 lg:py-4 bg-stone-900 text-white rounded-2xl font-bold arabic-sans flex items-center gap-2 hover:bg-gold transition-colors text-sm lg:text-base cursor-pointer shadow-md hover:shadow-lg whitespace-nowrap"
+        >
+          <span>أرسل اقتراحاً أو طلب صلاة</span>
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+      </section>
+
       {/* Map Section */}
       <section className="space-y-6">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -120,7 +157,7 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
-            { icon: Train, title: 'مترو الأنفاق', desc: 'محطة سانت تريزا أو روض الفرج', color: 'bg-blue-50 text-blue-600' },
+            { icon: Train, title: 'مترو الأنفاق', desc: 'محطة الخلفاوي', color: 'bg-blue-50 text-blue-600' },
             { icon: Bus, title: 'الحافلات', desc: 'أي حافلة تمر بشارع شبرا الرئيسي', color: 'bg-green-50 text-green-600' },
             { icon: Car, title: 'السيارات', desc: 'شارع الشيخ أحمد رافع، الساحل', color: 'bg-gold/10 text-gold' },
           ].map((item, idx) => (

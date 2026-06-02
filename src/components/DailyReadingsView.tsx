@@ -35,13 +35,24 @@ export default function DailyReadingsView() {
     const fetchReadings = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/katamars');
+        let rawData;
         
-        if (!response.ok) {
-          throw new Error('فشل في تحميل القراءات');
+        try {
+          // Attempt 1: Fetch from our Express cached API endpoint
+          const response = await fetch('/api/katamars');
+          if (!response.ok) {
+            throw new Error('Local API endpoint returned an error status');
+          }
+          rawData = await response.json();
+        } catch (localErr) {
+          console.warn('Local API /api/katamars failed or is hosted as client-only relative path. Trying direct external API fallback...', localErr);
+          // Attempt 2: Direct browser-to-API fallback if local route is unavailable, or on purely statically hosted domain
+          const response = await fetch('https://api.coptic.io/api/readings?detailed=true&lang=ar');
+          if (!response.ok) {
+            throw new Error('Direct external API and local proxy both unavailable');
+          }
+          rawData = await response.json();
         }
-
-        const rawData = await response.json();
         
         const BIBLE_BOOKS_AR: Record<string, string> = {
           'Matthew': 'متى',
@@ -56,8 +67,8 @@ export default function DailyReadingsView() {
           'Ephesians': 'أفسس',
           'Philippians': 'فيلبي',
           'Colossians': 'كولوسي',
-          '1 Thessalonians': 'تسالونيكي الأولى',
-          '2 Thessalonians': 'تسالونيكي الثانية',
+          '1 Thessalonians': 'تsaloniki الأولى',
+          '2 Thessalonians': 'تsaloniki الثانية',
           '1 Timothy': 'تيموثاوس الأولى',
           '2 Timothy': 'تيموثاوس الثانية',
           'Titus': 'تيطس',
@@ -102,18 +113,32 @@ export default function DailyReadingsView() {
 
         const COPTIC_MONTHS_AR: Record<string, string> = {
           'Thout': 'توت',
+          'Tout': 'توت',
           'Paopi': 'بابه',
+          'Babah': 'بابه',
           'Hathor': 'هاتور',
+          'Hator': 'هاتور',
           'Kiahk': 'كيهك',
+          'Koiahk': 'كيهك',
+          'Coyack': 'كيهك',
           'Tobi': 'طوبة',
+          'Tobe': 'طوبة',
           'Meshir': 'أمشير',
+          'Amshir': 'أمشير',
           'Paremhat': 'برمهات',
+          'Baramhat': 'برمهات',
           'Baramouda': 'برمودة',
+          'Paramouda': 'برمودة',
           'Pashons': 'بشنس',
+          'Bashans': 'بشنس',
           'Paoni': 'بؤونة',
+          'Baona': 'بؤونة',
           'Epip': 'أبيب',
+          'Abib': 'أبيب',
           'Mesori': 'مسرى',
+          'Mesra': 'مسرى',
           'Nasie': 'نسيء',
+          'Nasi': 'نسيء',
           'Pi Kogi Enavot': 'نسيء'
         };
 
@@ -121,7 +146,9 @@ export default function DailyReadingsView() {
           if (!dateStr) return '---';
           let result = dateStr;
           Object.entries(COPTIC_MONTHS_AR).forEach(([en, ar]) => {
-            result = result.replace(en, ar);
+            // Case-insensitive replacement to support various casings
+            const regex = new RegExp(en, 'gi');
+            result = result.replace(regex, ar);
           });
           return result;
         };
@@ -314,4 +341,3 @@ export default function DailyReadingsView() {
     </div>
   );
 }
-

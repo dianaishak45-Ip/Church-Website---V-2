@@ -1,5 +1,5 @@
 import { Calendar, Home, Book, LayoutGrid, History, Users } from 'lucide-react';
-import logoImg from '../assets/images/logo.png';
+import logoImg from '../images/logo.png';
 
 interface NavbarProps {
   activeTab: string;

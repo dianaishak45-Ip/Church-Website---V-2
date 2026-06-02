@@ -1,13 +1,22 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { BookOpen, Calendar, Award, Building2, Users, Star, ShieldCheck, Image as ImageIcon, Loader2, X, ChevronLeft, ChevronRight, Quote } from 'lucide-react';
-import React, { useState, useEffect, useCallback } from 'react';
-import heroImg from '../assets/images/hero.jpg';
-import logoImg from '../assets/images/logo.png';
+import { BookOpen, Calendar, Award, Building2, Users, Star, ShieldCheck, X, Quote } from 'lucide-react';
+import React, { useState } from 'react';
 import { CLERGY_DATA, Priest } from '../constants/priests';
+import { useSEO } from '../hooks/useSEO';
+
+import heroImg from '../images/hero.jpg';
+import logoImg from '../images/logo.png';
 
 const PriestCard: React.FC<{ father: Priest, onSelect: (p: Priest) => void }> = ({ father, onSelect }) => {
-  const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+
+  const getInitials = (name: string) => {
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return parts[parts.length - 2][0] + parts[parts.length - 1][0];
+    }
+    return name[0];
+  };
 
   return (
     <motion.div 
@@ -16,20 +25,24 @@ const PriestCard: React.FC<{ father: Priest, onSelect: (p: Priest) => void }> = 
       className="custom-panel !p-6 !mb-0 text-center space-y-4 transition-all cursor-pointer group"
     >
       <div className="relative w-32 h-32 mx-auto rounded-2xl overflow-hidden shadow-md border-4 border-white bg-stone-50 flex items-center justify-center">
-        {isLoading && !hasError && (
-          <div className="absolute inset-0 bg-stone-50 shimmer z-10" />
+        {father.image && !hasError ? (
+          <img 
+            src={father.image}
+            alt={father.name}
+            className="w-full h-full object-contain group-hover:scale-110 transition-all duration-500"
+            onError={() => {
+              setHasError(true);
+            }}
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-stone-100 to-stone-200 flex flex-col items-center justify-center">
+            <Users className="w-8 h-8 text-stone-300 mb-1" />
+            <span className="text-[10px] font-bold text-stone-400 uppercase tracking-tighter opacity-50">
+              {getInitials(father.name)}
+            </span>
+          </div>
         )}
-        <img 
-          src={father.image}
-          alt={father.name}
-          className={`w-full h-full object-contain group-hover:scale-110 transition-all duration-500 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
-          onLoad={() => setIsLoading(false)}
-          onError={() => {
-            setIsLoading(false);
-            setHasError(true);
-          }}
-          loading="lazy"
-        />
       </div>
       <h3 className="arabic-serif text-xl font-bold text-stone-800">{father.name}</h3>
       <div className="text-gold font-bold arabic-sans text-[10px] uppercase tracking-widest bg-gold/5 px-3 py-1 rounded-full inline-block">
@@ -43,44 +56,13 @@ const PriestCard: React.FC<{ father: Priest, onSelect: (p: Priest) => void }> = 
 };
 
 export default function HistoryView() {
-  const [galleryImages, setGalleryImages] = useState<string[]>([]);
-  const [loadingGallery, setLoadingGallery] = useState(true);
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  useSEO({
+    title: 'تاريخ الكنيسة - كنيسة مارمرقس بشبرا',
+    description: 'تاريخ كنيسة الشهيد العظيم مارمرقس الرسولي بشبرا، من نشأتها بجمعية أصدقاء الكتاب المقدس وحتى اليوم.',
+    keywords: 'تاريخ كنيسة مارمرقس, كنيسة شبرا, الكنيسة القبطية, جمعية أصدقاء الكتاب المقدس, كنائس شبرا',
+  });
+
   const [selectedPriest, setSelectedPriest] = useState<Priest | null>(null);
-
-  useEffect(() => {
-    fetch('/api/gallery')
-      .then(res => res.json())
-      .then(data => {
-        setGalleryImages(data);
-        setLoadingGallery(false);
-      })
-      .catch(err => {
-        console.error('Failed to fetch gallery:', err);
-        setLoadingGallery(false);
-      });
-  }, []);
-
-  const handleNext = useCallback(() => {
-    if (selectedIndex === null) return;
-    setSelectedIndex((prev) => (prev !== null && prev < galleryImages.length - 1 ? prev + 1 : 0));
-  }, [selectedIndex, galleryImages.length]);
-
-  const handlePrev = useCallback(() => {
-    if (selectedIndex === null) return;
-    setSelectedIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : galleryImages.length - 1));
-  }, [selectedIndex, galleryImages.length]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (selectedIndex === null) return;
-      if (e.key === 'Escape') setSelectedIndex(null);
-      if (e.key === 'ArrowRight') handleNext();
-      if (e.key === 'ArrowLeft') handlePrev();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedIndex, handleNext, handlePrev]);
 
   const milestones = [
     { year: '١٩٠٨', title: 'البذور الأولى', desc: 'تأسيس جمعية أصدقاء الكتاب المقدس التي كانت صاحبة الفضل في التفكير في إنشاء الكنيسة.' },
@@ -238,13 +220,17 @@ export default function HistoryView() {
                 <div className="bg-stone-50 p-8 pt-12 flex flex-col items-center text-center space-y-6 relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-gold/5 blur-2xl rounded-full -mr-16 -mt-16" />
                   
-                  {selectedPriest.image && (
+                  {selectedPriest.image ? (
                     <div className="w-48 h-48 rounded-[2.5rem] overflow-hidden border-8 border-white shadow-xl relative z-10 bg-white">
                       <img 
                         src={selectedPriest.image} 
                         alt={selectedPriest.name} 
                         className="w-full h-full object-contain"
                       />
+                    </div>
+                  ) : (
+                    <div className="w-48 h-48 rounded-[2.5rem] bg-gradient-to-br from-stone-100 to-stone-200 border-8 border-white shadow-xl relative z-10 flex items-center justify-center">
+                      <Users className="w-16 h-16 text-stone-300" />
                     </div>
                   )}
 
@@ -358,161 +344,6 @@ export default function HistoryView() {
               </li>
             </ul>
           </div>
-        </div>
-      </section>
-
-      {/* Gallery */}
-      <section className="space-y-10">
-        <div className="flex flex-col md:flex-row justify-between items-end gap-6">
-          <div className="space-y-2">
-            <h2 className="arabic-serif text-3xl lg:text-4xl font-bold text-stone-800 flex items-center gap-4">
-              <ImageIcon className="w-10 h-10 text-gold" />
-              ألبوم الذكريات
-            </h2>
-            <p className="arabic-sans text-stone-500">مشاهد تاريخية من حياة الكنيسة وخدمتها عبر السنين.</p>
-          </div>
-        </div>
-        
-        {loadingGallery ? (
-          <div className="flex flex-col items-center justify-center py-20 grayscale opacity-50">
-            <Loader2 className="w-12 h-12 text-gold animate-spin mb-4" />
-            <p className="arabic-sans text-stone-500">جاري تحميل الذكريات...</p>
-          </div>
-        ) : galleryImages.length > 0 ? (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-            {galleryImages.map((img, i) => (
-              <motion.div 
-                key={img}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                whileHover={{ scale: 1.02 }}
-                onClick={() => setSelectedIndex(i)}
-                className="group relative aspect-square bg-stone-100 rounded-[2rem] overflow-hidden cursor-pointer shadow-lg border-4 border-white"
-              >
-                <div className="absolute inset-0 bg-stone-900/40 opacity-0 group-hover:opacity-100 transition-opacity z-10 flex items-center justify-center">
-                   <div className="p-3 bg-white/20 backdrop-blur-md rounded-full border border-white/30 text-white">
-                      <Star className="w-6 h-6 fill-white" />
-                   </div>
-                </div>
-                <div className="absolute inset-0 flex items-center justify-center p-4">
-                   <img 
-                      src={`/gallery/${img}`}
-                      alt="ذكريات الكنيسة"
-                      className="w-full h-full object-contain grayscale transition-all duration-500 group-hover:grayscale-0 group-hover:scale-105"
-                      referrerPolicy="no-referrer"
-                    />
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        ) : (
-          <div className="bg-stone-50 rounded-[2rem] p-12 text-center border-2 border-dashed border-stone-200">
-             <div className="w-16 h-16 bg-stone-100 rounded-2xl flex items-center justify-center mx-auto mb-4 text-stone-300">
-                <ImageIcon className="w-8 h-8" />
-             </div>
-             <p className="arabic-sans text-stone-400">لا توجد صور في ألبوم الذكريات حالياً.</p>
-             <p className="text-xs text-stone-300 mt-2">قم بإضافة صور إلى مجلد public/gallery ليتم عرضها هنا.</p>
-          </div>
-        )}
-      </section>
-
-      {/* Gallery Lightbox */}
-      <AnimatePresence>
-        {selectedIndex !== null && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-stone-950/95 backdrop-blur-xl flex items-center justify-center p-4 md:p-10"
-            onClick={() => setSelectedIndex(null)}
-          >
-            <motion.button
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="absolute top-6 right-6 z-10 w-12 h-12 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition-colors border border-white/10"
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedIndex(null);
-              }}
-            >
-              <X className="w-6 h-6" />
-            </motion.button>
-
-            <button
-              className="absolute left-6 top-1/2 -translate-y-1/2 z-10 w-14 h-14 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition-colors border border-white/10 lg:flex hidden"
-              onClick={(e) => {
-                e.stopPropagation();
-                handlePrev();
-              }}
-            >
-              <ChevronLeft className="w-8 h-8" />
-            </button>
-
-            <button
-              className="absolute right-6 top-1/2 -translate-y-1/2 z-10 w-14 h-14 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition-colors border border-white/10 lg:flex hidden"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleNext();
-              }}
-            >
-              <ChevronRight className="w-8 h-8" />
-            </button>
-
-            <motion.div
-              layoutId={`gallery-${galleryImages[selectedIndex]}`}
-              className="relative max-w-5xl w-full h-full flex flex-col items-center justify-center gap-6"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="relative w-full h-[70vh] flex items-center justify-center">
-                <img
-                  src={`/gallery/${galleryImages[selectedIndex]}`}
-                  alt="Gallery Zoom"
-                  className="max-w-full max-h-full object-contain shadow-2xl rounded-2xl"
-                />
-              </div>
-              
-              <div className="flex items-center gap-6">
-                <button
-                  className="w-12 h-12 bg-white/5 hover:bg-white/10 text-white rounded-full flex items-center justify-center transition-colors lg:hidden"
-                  onClick={handlePrev}
-                >
-                  <ChevronLeft className="w-6 h-6" />
-                </button>
-                
-                <div className="px-6 py-2 bg-white/10 rounded-full border border-white/10 text-white arabic-sans text-sm font-medium">
-                   {selectedIndex + 1} / {galleryImages.length}
-                </div>
-
-                <button
-                  className="w-12 h-12 bg-white/5 hover:bg-white/10 text-white rounded-full flex items-center justify-center transition-colors lg:hidden"
-                  onClick={handleNext}
-                >
-                  <ChevronRight className="w-6 h-6" />
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Quick Stats Summary */}
-      <section className="custom-panel !p-12 text-center space-y-8 !bg-stone-50/50">
-        <h2 className="arabic-serif text-3xl font-bold text-stone-400 italic">"أمانة الآباء.. ورجاء الأبناء"</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
-          {[
-            { label: 'عام من الإيمان', val: '٧٠+', icon: Calendar },
-            { label: 'كاهن تخرج منها', val: '٢٧+', icon: Users },
-            { label: 'أدوات الخدمة', val: '١٥+', icon: Building2 },
-            { label: 'نتاج الخدمة', val: 'مئات', icon: Award },
-          ].map((stat, i) => (
-            <div key={i} className="space-y-2">
-              <stat.icon className="w-6 h-6 text-gold mx-auto" />
-              <div className="text-4xl font-bold text-stone-900 leading-none">{stat.val}</div>
-              <div className="arabic-sans text-[10px] text-stone-500 uppercase tracking-[0.2em] font-bold">{stat.label}</div>
-            </div>
-          ))}
         </div>
       </section>
     </div>

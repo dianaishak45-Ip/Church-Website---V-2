@@ -1,10 +1,10 @@
 {
-  "projectId": "remixed-project-id",
-  "appId": "remixed-app-id",
-  "apiKey": "remixed-api-key",
-  "authDomain": "remixed-auth-domain",
-  "firestoreDatabaseId": "remixed-firestore-database-id",
-  "storageBucket": "remixed-storage-bucket",
-  "messagingSenderId": "remixed-messaging-sender-id",
-  "measurementId": "remixed-measurement-id"
+  "projectId": "stmark-website-496813",
+  "appId": "1:832615792666:web:fe5cef278329ffbe8c91a3",
+  "apiKey": "AIzaSyBtA2BNHEshCjEFbkmXqOcKaeHBzy2goCM",
+  "authDomain": "stmark-website-496813.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-97238d19-72f9-4b9c-abdf-e7214b548495",
+  "storageBucket": "stmark-website-496813.firebasestorage.app",
+  "messagingSenderId": "832615792666",
+  "measurementId": ""
 }
