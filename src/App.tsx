@@ -8,6 +8,7 @@ import GalleryView from './components/GalleryView';
 import PatronSaintView from './components/PatronSaintView';
 import DailyReadingsView from './components/DailyReadingsView';
 import ChurchServicesView from './components/ChurchServicesView';
+import DonationsView from './components/DonationsView';
 import ContactSuggestionsModal from './components/ContactSuggestionsModal';
 import { motion, AnimatePresence } from 'motion/react';
 import { MessageSquare } from 'lucide-react';
@@ -33,6 +34,7 @@ export default function App() {
       case 'services': return <ChurchServicesView />;
       case 'gallery': return <GalleryView />;
       case 'clergy': return <ClergyView />;
+      case 'donations': return <DonationsView />;
       default: return <HomeView onTabChange={handleTabChange} onOpenSuggestions={() => setIsSuggestionsOpen(true)} />;
     }
   };

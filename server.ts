@@ -6,18 +6,24 @@ import nodemailer from 'nodemailer';
 import { fileURLToPath } from 'url';
 
 const app = express();
-const PORT = Number(process.env.PORT) || 3000;
 
 // Portable __dirname equivalent for ESM/CJS compatibility
 const getDirname = () => {
+  if (typeof __dirname !== 'undefined') {
+    return __dirname;
+  }
   try {
     return path.dirname(fileURLToPath(import.meta.url));
   } catch {
-    return __dirname;
+    return process.cwd();
   }
 };
 
 const _dirname = getDirname();
+
+const isBundled = path.basename(path.resolve(_dirname)) === 'dist';
+const isProd = process.env.NODE_ENV === 'production' || isBundled;
+const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
 
 // Root health checks for Cloud Run - Must be FIRST
 app.all('/healthz', (req, res) => res.status(200).send('OK'));
@@ -134,6 +140,149 @@ app.post('/api/suggestions', async (req, res) => {
   } catch (err: any) {
     console.error('[Suggestions API Error]:', err);
     return res.status(500).json({ error: 'عذراً، حدث خطأ داخلي على الخادم أو أثناء إعداد إرسال البريد الإلكتروني.' });
+  }
+});
+
+// Donation Confirmation Email and Record POST API
+app.post('/api/donations', async (req, res) => {
+  try {
+    const { name, phone, email, amount, destination, transactionRef, transactionDate, prayerRequest, method, receiptImage, receiptName } = req.body;
+
+    if (!amount || isNaN(Number(amount))) {
+      return res.status(400).json({ error: 'قيمة التبرع حقل مطلوب وهو قيمة رقمية صحيحة.' });
+    }
+
+    const formattedAmount = `${Number(amount).toLocaleString('ar-EG')} جنيه مصري`;
+    const emailTo = process.env.EMAIL_TO || 'info@stmarkshoubra.com';
+    const emailFrom = process.env.SMTP_USER || 'donations@stmarkshoubra.com';
+    const emailSubject = `[إخطار تبرع جديد] بقيمة ${amount} ج.م - ${name || 'فاعل خير'}`;
+
+    const htmlContent = `
+      <div style="direction: rtl; text-align: right; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; border: 2px solid #b08d2e; border-radius: 20px; background-color: #faf9f6; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+        <!-- Header -->
+        <div style="text-align: center; border-bottom: 2px solid #b08d2e; padding-bottom: 15px; margin-bottom: 25px;">
+          <h2 style="color: #1c1917; margin: 0; font-size: 22px;">كنيسة القديس مارمرقس الرسولي بشبرا</h2>
+          <p style="color: #b08d2e; margin: 5px 0 0 0; font-size: 13px; font-weight: bold; letter-spacing: 0.5px;">بوابة إدارة ومراجعة تبرعات الخدمة</p>
+        </div>
+
+        <!-- Meta Grid -->
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 14px;">
+          <tr style="background-color: #f5f3ef;">
+            <td style="padding: 12px; font-weight: bold; width: 140px; border-bottom: 1px solid #e5dbc7; color: #1c1917;">اسم المتبرع:</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e5dbc7; color: #44403c;">${name || 'فاعل خير'}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; font-weight: bold; border-bottom: 1px solid #e5dbc7; color: #1c1917;">البريد الإلكتروني:</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e5dbc7; color: #44403c;" dir="ltr">${email || 'غير محدد'}</td>
+          </tr>
+          <tr style="background-color: #f5f3ef;">
+            <td style="padding: 12px; font-weight: bold; border-bottom: 1px solid #e5dbc7; color: #1c1917;">رقم الهاتف:</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e5dbc7; color: #44403c;" dir="ltr">${phone || 'غير محدد'}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; font-weight: bold; border-bottom: 1px solid #e5dbc7; color: #1c1917; font-size: 16px;">مبلغ التبرع:</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e5dbc7; font-weight: bold; color: #b08d2e; font-size: 18px;">${formattedAmount}</td>
+          </tr>
+          <tr style="background-color: #f5f3ef;">
+            <td style="padding: 12px; font-weight: bold; border-bottom: 1px solid #e5dbc7; color: #1c1917;">وجه ودائرة الصرف:</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e5dbc7; font-weight: bold; color: #1c1917;">${destination}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; font-weight: bold; border-bottom: 1px solid #e5dbc7; color: #1c1917;">طريقة الدفع:</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e5dbc7; color: #44403c; font-weight: bold;">${method === 'instapay' ? 'إيستاباي (InstaPay)' : method === 'bank' ? 'التحويل المعاملة البنكية' : 'نقدي الكنيسة'}</td>
+          </tr>
+          <tr style="background-color: #f5f3ef;">
+            <td style="padding: 12px; font-weight: bold; border-bottom: 1px solid #e5dbc7; color: #1c1917;">الرقم المرجعي (ID):</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e5dbc7; color: #44403c; font-family: monospace;" dir="ltr">${transactionRef || 'غير محدد'}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; font-weight: bold; border-bottom: 1px solid #e5dbc7; color: #1c1917;">تاريخ التحويل:</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e5dbc7; color: #44403c;" dir="ltr">${transactionDate}</td>
+          </tr>
+          <tr style="background-color: #f5f3ef;">
+            <td style="padding: 12px; font-weight: bold; border-bottom: 1px solid #e5dbc7; color: #1c1917;">وقت تسجيل الطلب:</td>
+            <td style="padding: 12px; border-bottom: 1px solid #e5dbc7; color: #44403c;" dir="ltr">${new Date().toLocaleString('ar-EG', { timeZone: 'Africa/Cairo' })} (توقيت القاهرة)</td>
+          </tr>
+        </table>
+
+        <!-- Altar Mentions -->
+        <div style="margin-top: 20px; background-color: #fcfbf9; padding: 20px; border-radius: 16px; border: 1px dashed #b08d2e; box-shadow: 0 2px 5px rgba(0,0,0,0.01);">
+          <h3 style="margin-top: 0; color: #b08d2e; border-bottom: 1px solid #f2eee3; padding-bottom: 10px; font-size: 15px;">ذكر أسماء في القداس (طلب الصلاة):</h3>
+          <p style="color: #44403c; line-height: 1.8; font-size: 14px; white-space: pre-line; margin: 0; font-style: italic;">${prayerRequest || 'لا يوجد طلبيات صلاة مدرجة'}</p>
+        </div>
+
+        <!-- Receipt Note -->
+        ${receiptName ? `
+        <div style="margin-top: 15px; color: #1c1917; font-size: 12px;">
+          📎 تم إرفاق لقطة الشاشة وصورة الإيصال باسم: <strong>${receiptName}</strong> للمراجعة.
+        </div>
+        ` : ''}
+
+        <!-- Footer -->
+        <div style="margin-top: 30px; text-align: center; font-size: 11px; color: #a8a29e; border-top: 1px solid #e5dbc7; padding-top: 15px;">
+          هذا إخطار للبرمجيات الإدارية مرسل الكترونياً عبر بوابة التبرعات في الموقع الرسمي لكنيسة مارمرقس بشبرا.
+        </div>
+      </div>
+    `;
+
+    const smtpHost = process.env.SMTP_HOST;
+    const smtpPort = Number(process.env.SMTP_PORT) || 587;
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPass = process.env.SMTP_PASS;
+
+    const attachments: any[] = [];
+    if (receiptImage && receiptName) {
+      const matches = receiptImage.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
+      if (matches && matches.length === 3) {
+        attachments.push({
+          filename: receiptName,
+          content: Buffer.from(matches[2], 'base64'),
+          contentType: matches[1]
+        });
+      }
+    }
+
+    if (smtpHost && smtpUser && smtpPass) {
+      console.log(`[Email] Sending donation notice to ${emailTo} via SMTP...`);
+      const transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: smtpPort,
+        secure: smtpPort === 465,
+        auth: { user: smtpUser, pass: smtpPass },
+        tls: { rejectUnauthorized: false }
+      });
+
+      await transporter.sendMail({
+        from: `"${name || 'فاعل خير'}" <${emailFrom}>`,
+        to: emailTo,
+        replyTo: email || undefined,
+        subject: emailSubject,
+        html: htmlContent,
+        attachments
+      });
+      console.log('[Email] Donation notice email successfully sent!');
+    } else {
+      console.log('------------------------------------------------------------');
+      console.log('[Email Simulation Only - SMTP Credentials Not Fully Set]');
+      console.log(`To: ${emailTo}`);
+      console.log(`Subject: ${emailSubject}`);
+      console.log('------------------------- Donation Notice -------------------');
+      console.log(`المتبرع: ${name || 'فاعل خير'}`);
+      console.log(`المبلغ: ${formattedAmount}`);
+      console.log(`الجهة: ${destination}`);
+      console.log(`طريقة الدفع: ${method}`);
+      console.log(`الآيبان/الرقم المرجعي: ${transactionRef}`);
+      console.log(`الأسماء في الصلاة:\n${prayerRequest}`);
+      if (receiptName) {
+        console.log(`الإيصال المرفق: ${receiptName}`);
+      }
+      console.log('------------------------------------------------------------');
+    }
+
+    return res.status(200).json({ success: true, message: 'تم إرسال إخطار البريد بنجاح إلى حسابات الكنيسة.' });
+  } catch (err: any) {
+    console.error('[Donations API Error]:', err);
+    return res.status(500).json({ error: 'حدث خطأ في السيرفر أثناء إرسال إخطار التبرع الكنسي. يرجى التحقق من المدخلات.' });
   }
 });
 
@@ -294,7 +443,7 @@ app.get('/api/gallery', (req, res) => {
 
 // Dynamic Announcements / News API
 app.get('/api/announcements', (req, res) => {
-  const staticPath = process.env.NODE_ENV !== 'production' ? path.resolve(process.cwd(), 'public') : (fs.existsSync(path.join(_dirname, 'index.html')) ? _dirname : path.resolve(process.cwd(), 'dist'));
+  const staticPath = !isProd ? path.resolve(process.cwd(), 'public') : (isBundled ? _dirname : path.resolve(process.cwd(), 'dist'));
   const announcementsPath = getStorageDir('announcements');
   const fallbackPath = path.join(staticPath, 'assets', 'images');
   
@@ -482,9 +631,6 @@ process.on('uncaughtException', (err) => {
 });
 
 async function setupApp() {
-  const isProd = process.env.NODE_ENV === 'production';
-  // Check if we are running the bundled version in dist
-  const isBundled = fs.existsSync(path.join(_dirname, 'index.html'));
   const staticPath = isBundled ? _dirname : path.resolve(process.cwd(), 'dist');
 
   console.log(`[${new Date().toISOString()}] Server env: ${process.env.NODE_ENV}, Bundled: ${isBundled}`);

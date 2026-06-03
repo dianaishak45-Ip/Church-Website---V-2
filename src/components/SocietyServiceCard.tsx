@@ -1,6 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Phone } from 'lucide-react';
 import { SocietyService } from '../data/churchServicesData';
+
+// Church Services static PNG Images from /public/assets/images
+const stMarkMarsaImg = '/assets/images/st-mark-marsa.png';
+const stMarkObourImg = '/assets/images/st-mark-obour.png';
+const stMarkHospitalImg = '/assets/images/st-mark-hospital.png';
+const arkOfSalvationImg = '/assets/images/ark-of-salvation.png';
+const stMarkNurserySchoolImg = '/assets/images/st-mark-nursery-school.png';
+const dialysisUnitImg = '/assets/images/dialysis-unit.png';
+const weddingBookingImg = '/assets/images/wedding-booking.png';
+const specialNeedsNurseryImg = '/assets/images/special-needs-nursery.png';
+const virginElderlyImg = '/assets/images/virgin-elderly.png';
 
 const WhatsAppIcon = ({ className = "w-3.5 h-3.5" }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -17,58 +28,29 @@ interface ServiceCardImageProps {
 }
 
 function ServiceCardImage({ src, alt, fallbackTitle, fallbackDesc, fallbackIcon }: ServiceCardImageProps) {
-  const [isLoaded, setIsLoaded] = useState(false);
   const [isError, setIsError] = useState(false);
 
-  useEffect(() => {
-    setIsLoaded(false);
-    setIsError(false);
-
-    const img = new Image();
-    img.src = src;
-    img.onload = () => {
-      setIsLoaded(true);
-    };
-    img.onerror = () => {
-      setIsError(true);
-    };
-
-    return () => {
-      img.onload = null;
-      img.onerror = null;
-    };
-  }, [src]);
-
-  if (isError) {
-    return (
-      <div className="w-full h-[160px] mb-2 flex flex-col items-center justify-center text-center animate-fade-in px-4">
-        {fallbackIcon && (
-          <div className="w-12 h-12 rounded-3xl bg-amber-500/[0.07] border border-amber-500/10 flex items-center justify-center text-amber-600 mb-2 shadow-sm text-base">
-            {fallbackIcon}
-          </div>
-        )}
-        <h4 className="arabic-serif text-sm sm:text-base font-black text-stone-900 mb-1 leading-relaxed">{fallbackTitle}</h4>
-        <p className="arabic-sans text-[10.5px] text-stone-500 font-bold leading-normal">{fallbackDesc}</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="w-full flex-grow flex items-center justify-center relative min-h-0 max-h-[160px] mb-2">
-      {!isLoaded && (
-        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex items-center justify-center text-stone-300">
-          <span className="w-6 h-6 rounded-full border-2 border-stone-200 border-t-amber-500 animate-spin" />
+    <div className="w-full flex-grow flex items-center justify-center relative min-h-[140px] max-h-[160px] mb-2">
+      {isError ? (
+        <div className="w-full h-[160px] mb-2 flex flex-col items-center justify-center text-center animate-fade-in px-4">
+          {fallbackIcon && (
+            <div className="w-12 h-12 rounded-3xl bg-amber-500/[0.07] border border-amber-500/10 flex items-center justify-center text-amber-600 mb-2 shadow-sm text-base">
+              {fallbackIcon}
+            </div>
+          )}
+          <h4 className="arabic-serif text-sm sm:text-base font-black text-stone-900 mb-1 leading-relaxed">{fallbackTitle}</h4>
+          <p className="arabic-sans text-[10.5px] text-stone-500 font-bold leading-normal">{fallbackDesc}</p>
         </div>
+      ) : (
+        <img
+          src={src}
+          alt={alt}
+          onError={() => setIsError(true)}
+          loading="eager"
+          className="max-w-full max-h-[140px] object-contain rounded-2xl transition-all duration-300 group-hover:scale-102 z-10"
+        />
       )}
-      <img
-        src={src}
-        loading="eager"
-        referrerPolicy="no-referrer"
-        className={`max-w-full max-h-full object-contain rounded-2xl drop-shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-opacity duration-300 group-hover:scale-102 z-10 ${
-          isLoaded ? 'opacity-100' : 'opacity-0 absolute'
-        }`}
-        alt={alt}
-      />
     </div>
   );
 }
@@ -89,7 +71,7 @@ export default function SocietyServiceCard({ service }: SocietyServiceCardProps)
       {service.id === 'san-mark-marsa' ? (
         <div className="w-full h-full flex flex-col items-center justify-between select-none overflow-hidden">
           <ServiceCardImage
-            src="/assets/images/st-mark-marsa.webp"
+            src={stMarkMarsaImg}
             alt="سان مارك - بيت مارمرقس بمرسى مطروح"
             fallbackTitle="سان مارك"
             fallbackDesc="بيت مارمرقس بمرسى مطروح"
@@ -98,9 +80,6 @@ export default function SocietyServiceCard({ service }: SocietyServiceCardProps)
 
           {/* WhatsApp Booking section */}
           <div className="mt-auto pt-3 border-t border-stone-100 w-full flex flex-col items-center gap-2 shrink-0" id="marsa-whatsapp-container">
-            <span className="arabic-sans text-[11px] text-stone-500 font-bold leading-normal">
-              للحجز أو الاستعلام من خلال الواتس :
-            </span>
             <a
               href="https://wa.me/201096457504"
               target="_blank"
@@ -116,7 +95,7 @@ export default function SocietyServiceCard({ service }: SocietyServiceCardProps)
       ) : service.id === 'obour-land' ? (
         <div className="w-full h-full flex flex-col items-center justify-between select-none overflow-hidden">
           <ServiceCardImage
-            src="/assets/images/st-mark-obour.webp"
+            src={stMarkObourImg}
             alt="أرض الإجلاء بالعبور (تأسست في عام ٢٠٠٨)"
             fallbackTitle="أرض الإجلاء"
             fallbackDesc="تأسست في عام ٢٠٠٨ بالعبور"
@@ -125,9 +104,6 @@ export default function SocietyServiceCard({ service }: SocietyServiceCardProps)
 
           {/* Specific Booking details with Phone icon and CTA button */}
           <div className="mt-auto pt-3 border-t border-stone-100 w-full flex flex-col items-center gap-2.5 shrink-0" id="obour-booking-container">
-            <span className="arabic-sans text-[11px] text-stone-500 font-bold leading-normal">
-              للحجز أو الاستعلام
-            </span>
             <a
               href="tel:01224947537"
               className="relative z-10 w-full inline-flex items-center justify-center gap-2 py-2.5 bg-stone-50 hover:bg-stone-900 text-stone-700 hover:text-amber-400 rounded-xl border border-stone-200 hover:border-stone-900 transition-all duration-300 text-xs font-bold shadow-sm select-text"
@@ -142,7 +118,7 @@ export default function SocietyServiceCard({ service }: SocietyServiceCardProps)
       ) : service.id === 'st-mark-hospital' ? (
         <div className="w-full h-full flex flex-col items-center justify-between select-none overflow-hidden">
           <ServiceCardImage
-            src="/assets/images/st-mark-hospital.webp"
+            src={stMarkHospitalImg}
             alt="مستشفى القديس مارمرقس بشبرا"
             fallbackTitle="مستشفى القديس مارمرقس بشبرا"
             fallbackDesc="صرح طبي متكامل لخدمة أهالي شبرا ورعاية طبية متميزة"
@@ -151,9 +127,6 @@ export default function SocietyServiceCard({ service }: SocietyServiceCardProps)
 
           {/* Specific Booking details with Phone icon and CTA button */}
           <div className="mt-auto pt-3 border-t border-stone-100 w-full flex flex-col items-center gap-2.5 shrink-0" id="hospital-booking-container">
-            <span className="arabic-sans text-[11px] text-stone-500 font-bold leading-normal">
-              للحجز أو الاستعلام
-            </span>
             <a
               href="tel:01227327025"
               className="relative z-10 w-full inline-flex items-center justify-center gap-2 py-2.5 bg-stone-50 hover:bg-stone-900 text-stone-700 hover:text-amber-400 rounded-xl border border-stone-200 hover:border-stone-900 transition-all duration-300 text-xs font-bold shadow-sm select-text"
@@ -168,7 +141,7 @@ export default function SocietyServiceCard({ service }: SocietyServiceCardProps)
       ) : service.id === 'ark-of-salvation' ? (
         <div className="w-full h-full flex flex-col items-center justify-between select-none overflow-hidden">
           <ServiceCardImage
-            src="/assets/images/ark-of-salvation.webp"
+            src={arkOfSalvationImg}
             alt="بيت سفينة النجاة بوادي النطرون"
             fallbackTitle="بيت سفينة النجاة بوادي النطرون"
             fallbackDesc="بيت للخلوات الروحية ومعسكرات التربية الكنسية والأنشطة الكشفية"
@@ -177,9 +150,6 @@ export default function SocietyServiceCard({ service }: SocietyServiceCardProps)
 
           {/* Specific Booking details with Phone icon and CTA button */}
           <div className="mt-auto pt-3 border-t border-stone-100 w-full flex flex-col items-center gap-2.5 shrink-0" id="safina-booking-container">
-            <span className="arabic-sans text-[11px] text-stone-500 font-bold leading-normal">
-              للحجز أو الاستعلام
-            </span>
             <a
               href="tel:01271141331"
               className="relative z-10 w-full inline-flex items-center justify-center gap-2 py-2.5 bg-stone-50 hover:bg-stone-900 text-stone-700 hover:text-amber-400 rounded-xl border border-stone-200 hover:border-stone-900 transition-all duration-300 text-xs font-bold shadow-sm select-text"
@@ -194,7 +164,7 @@ export default function SocietyServiceCard({ service }: SocietyServiceCardProps)
       ) : service.id === 'st-mark-nursery-school' ? (
         <div className="w-full h-full flex flex-col items-center justify-between select-none overflow-hidden">
           <ServiceCardImage
-            src="/assets/images/st-mark-nursery-school.webp"
+            src={stMarkNurserySchoolImg}
             alt="St. Mark Nursery (حضانة مارمرقس النموذجية)"
             fallbackTitle="St. Mark Nursery"
             fallbackDesc="حضانة كنسية لتربية وتأسيس النشء وفقاً لمناهج تفاعلية حديثة"
@@ -203,9 +173,6 @@ export default function SocietyServiceCard({ service }: SocietyServiceCardProps)
 
           {/* Specific Booking details with Phone icon and CTA button */}
           <div className="mt-auto pt-3 border-t border-stone-100 w-full flex flex-col items-center gap-2.5 shrink-0" id="nursery-booking-container">
-            <span className="arabic-sans text-[11px] text-stone-500 font-bold leading-normal">
-              للحجز أو الاستعلام
-            </span>
             <a
               href="tel:0224323009"
               className="relative z-10 w-full inline-flex items-center justify-center gap-2 py-2.5 bg-stone-50 hover:bg-stone-900 text-stone-700 hover:text-amber-400 rounded-xl border border-stone-200 hover:border-stone-900 transition-all duration-300 text-xs font-bold shadow-sm select-text"
@@ -220,7 +187,7 @@ export default function SocietyServiceCard({ service }: SocietyServiceCardProps)
       ) : service.id === 'dialysis-unit' ? (
         <div className="w-full h-full flex flex-col items-center justify-between select-none overflow-hidden">
           <ServiceCardImage
-            src="/assets/images/dialysis-unit.webp"
+            src={dialysisUnitImg}
             alt="وحدة ماري مرقس لأمراض الكلى وغسيل الماكينات"
             fallbackTitle="وحدة ماري مرقس لأمراض الكلى"
             fallbackDesc="رعاية طبية تخصصية متكاملة لمرضى الكلى وغسيل الكلوي التخصصي"
@@ -229,9 +196,6 @@ export default function SocietyServiceCard({ service }: SocietyServiceCardProps)
 
           {/* Specific Booking details with Phone icon and CTA button */}
           <div className="mt-auto pt-3 border-t border-stone-100 w-full flex flex-col items-center gap-2.5 shrink-0" id="dialysis-booking-container">
-            <span className="arabic-sans text-[11px] text-stone-500 font-bold leading-normal">
-              للحجز أو الاستعلام
-            </span>
             <a
               href="tel:0222048344"
               className="relative z-10 w-full inline-flex items-center justify-center gap-2 py-2.5 bg-stone-50 hover:bg-stone-900 text-stone-700 hover:text-amber-400 rounded-xl border border-stone-200 hover:border-stone-900 transition-all duration-300 text-xs font-bold shadow-sm select-text"
@@ -246,7 +210,7 @@ export default function SocietyServiceCard({ service }: SocietyServiceCardProps)
       ) : service.id === 'wedding-booking' ? (
         <div className="w-full h-full flex flex-col items-center justify-between select-none overflow-hidden">
           <ServiceCardImage
-            src="/assets/images/wedding-booking.webp"
+            src={weddingBookingImg}
             alt="سكرتارية حجز الأفراح والأكاليل الكنسية"
             fallbackTitle="سكرتارية حجز الأفراح"
             fallbackDesc="تنسيق وحجز مواعيد الأكاليل المقدسة والخطوبات بقاعات الكنيسة"
@@ -255,9 +219,6 @@ export default function SocietyServiceCard({ service }: SocietyServiceCardProps)
 
           {/* Specific Booking details with Phone icon and CTA button */}
           <div className="mt-auto pt-3 border-t border-stone-100 w-full flex flex-col items-center gap-2.5 shrink-0" id="wedding-booking-container">
-            <span className="arabic-sans text-[11px] text-stone-500 font-bold leading-normal">
-              للحجز أو الاستعلام
-            </span>
             <a
               href="tel:0103719185"
               className="relative z-10 w-full inline-flex items-center justify-center gap-2 py-2.5 bg-stone-50 hover:bg-stone-900 text-stone-700 hover:text-amber-400 rounded-xl border border-stone-200 hover:border-stone-900 transition-all duration-300 text-xs font-bold shadow-sm select-text"
@@ -272,7 +233,7 @@ export default function SocietyServiceCard({ service }: SocietyServiceCardProps)
       ) : service.id === 'special-needs-nursery' ? (
         <div className="w-full h-full flex flex-col items-center justify-between select-none overflow-hidden">
           <ServiceCardImage
-            src="/assets/images/special-needs-nursery.webp"
+            src={specialNeedsNurseryImg}
             alt="حضانة ذوي الاحتياجات الخاصة وتنمية المهارات"
             fallbackTitle="حضانة ذوي الاحتياجات الخاصة"
             fallbackDesc="تأسيس وتعليم مخصص للأطفال الغاليين من ذوي القدرات والاحتياجات"
@@ -281,9 +242,6 @@ export default function SocietyServiceCard({ service }: SocietyServiceCardProps)
 
           {/* Specific Booking details with Phone icon and CTA button */}
           <div className="mt-auto pt-3 border-t border-stone-100 w-full flex flex-col items-center gap-2.5" id="special-needs-booking-container">
-            <span className="arabic-sans text-[11px] text-stone-500 font-bold leading-normal">
-              للحجز أو الاستعلام
-            </span>
             <a
               href="tel:0222022514"
               className="relative z-10 w-full inline-flex items-center justify-center gap-2 py-2.5 bg-stone-50 hover:bg-stone-900 text-stone-700 hover:text-amber-400 rounded-xl border border-stone-200 hover:border-stone-900 transition-all duration-300 text-xs font-bold shadow-sm select-text"
@@ -298,7 +256,7 @@ export default function SocietyServiceCard({ service }: SocietyServiceCardProps)
       ) : service.id === 'virgin-elderly' ? (
         <div className="w-full h-full flex flex-col items-center justify-between select-none overflow-hidden">
           <ServiceCardImage
-            src="/assets/images/virgin-elderly.webp"
+            src={virginElderlyImg}
             alt="دار العذراء ومارمرقس لرعاية المسنات"
             fallbackTitle="دار العذراء ومارمرقس لرعاية المسنات"
             fallbackDesc="رعاية نموذجية كافية وحانية لأمهاتنا كبار السن بإشراف طبي ونفسي وافتقادي متكامل"
@@ -307,9 +265,6 @@ export default function SocietyServiceCard({ service }: SocietyServiceCardProps)
 
           {/* Specific Booking details with Phone icon and CTA button */}
           <div className="mt-auto pt-3 border-t border-stone-100 w-full flex flex-col items-center gap-2.5" id="elderly-booking-container">
-            <span className="arabic-sans text-[11px] text-stone-500 font-bold leading-normal">
-              للحجز أو الاستعلام
-            </span>
             <a
               href="tel:0222015278"
               className="relative z-10 w-full inline-flex items-center justify-center gap-2 py-2.5 bg-stone-50 hover:bg-stone-900 text-stone-700 hover:text-amber-400 rounded-xl border border-stone-200 hover:border-stone-900 transition-all duration-300 text-xs font-bold shadow-sm select-text"

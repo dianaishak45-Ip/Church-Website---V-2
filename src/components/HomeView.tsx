@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { MapPin, Phone, BookOpen, ChevronLeft, Train, Bus, Car, Info, MessageSquare } from 'lucide-react';
+import { MapPin, Phone, BookOpen, ChevronLeft, Train, Bus, Car, Info, MessageSquare, HeartHandshake } from 'lucide-react';
 import { LiveStreamWidget } from './LiveStreamWidget';
 import { AnnouncementSlider } from './AnnouncementSlider';
 import heroImg from '../images/hero.jpg';
@@ -136,6 +136,27 @@ export default function HomeView({ onTabChange, onOpenSuggestions }: HomeViewPro
           className="px-6 py-3 lg:px-8 lg:py-4 bg-stone-900 text-white rounded-2xl font-bold arabic-sans flex items-center gap-2 hover:bg-gold transition-colors text-sm lg:text-base cursor-pointer shadow-md hover:shadow-lg whitespace-nowrap"
         >
           <span>أرسل اقتراحاً أو طلب صلاة</span>
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+      </section>
+
+      {/* Donations and Giving CTA Section */}
+      <section className="custom-panel !p-6 lg:!p-10 flex flex-col md:flex-row items-center gap-8 group border border-gold/20 rounded-[2.5rem] relative overflow-hidden bg-white">
+        <div className="absolute top-0 left-0 w-32 h-32 bg-gold/5 rounded-full blur-2xl pointer-events-none" />
+        <div className="w-16 h-16 lg:w-20 lg:h-20 bg-gold/15 text-gold rounded-3xl flex items-center justify-center shrink-0">
+          <HeartHandshake className="w-8 h-8 lg:w-10 lg:h-10 text-gold" />
+        </div>
+        <div className="flex-1 space-y-2 text-center md:text-right" dir="rtl">
+          <h2 className="arabic-serif text-xl lg:text-2xl font-bold text-gold">العطاء والمساهمة الكنسية</h2>
+          <p className="arabic-sans text-stone-500 text-sm leading-relaxed">
+            ساهم بتبّرعك لدعم خدمات الرعاية والتعليم وأخوة الرب، أو المساهمة في ترميم وبناء وصيانة الكنيسة عبر قنوات التحويل المختلفة، وتطبيق إيستاباي (InstaPay) اللحظي بنقرة واحدة.
+          </p>
+        </div>
+        <button 
+          onClick={() => onTabChange?.('donations')}
+          className="px-6 py-3 lg:px-8 lg:py-4 bg-stone-900 text-white rounded-2xl font-bold arabic-sans flex items-center gap-2 hover:bg-gold transition-colors text-sm lg:text-base cursor-pointer shadow-md hover:shadow-lg whitespace-nowrap"
+        >
+          <span>عرض تفاصيل وقنوات التبرع</span>
           <ChevronLeft className="w-4 h-4" />
         </button>
       </section>

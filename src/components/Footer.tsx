@@ -26,6 +26,7 @@ export default function Footer({ onTabChange }: FooterProps) {
       title: 'روابط هامة',
       links: [
         { id: 'readings', label: 'القراءات اليومية والسنكسار' },
+        { id: 'donations', label: 'العطاء والتبرعات الكنسية' },
       ]
     }
   ];

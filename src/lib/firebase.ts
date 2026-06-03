@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { initializeFirestore, collection, addDoc, serverTimestamp, doc, getDocFromServer } from 'firebase/firestore';
+import { initializeFirestore, collection, addDoc, serverTimestamp, doc, getDocFromServer, disableNetwork } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
@@ -54,22 +54,33 @@ export function handleFirestoreError(error: any, operation: FirestoreErrorInfo['
   throw new Error(JSON.stringify(errorInfo));
 }
 
+export let isFirestoreAvailable = true;
+
 // CRITICAL CONSTRAINT: Test connection on boot with a responsive timeout
 async function testConnection() {
   try {
-    // 2-second timeout to prevent 10s hangs in offline/unprovisioned states
+    // 1.5-second timeout to prevent 10s hangs in offline/unprovisioned states
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Firebase connection timeout")), 2000)
+      setTimeout(() => reject(new Error("Firebase connection timeout")), 1500)
     );
     await Promise.race([
       getDocFromServer(doc(db, 'test', 'connection')),
       timeoutPromise
     ]);
+    console.log("[Firebase] Successfully connected to remote Firestore backend.");
   } catch (error) {
+    isFirestoreAvailable = false;
     if (error instanceof Error) {
       console.warn("[Firebase] Offline or unconfigured. Continuing in graceful backup mode:", error.message);
     } else {
       console.warn("[Firebase] Offline or unconfigured. Continuing in graceful backup mode.");
+    }
+    // Instantly put Firebase in offline mode to prevent background 10s reach warnings/reconnections!
+    try {
+      await disableNetwork(db);
+      console.log("[Firebase] Network disabled. Operating in fully offline/graceful mode.");
+    } catch (e) {
+      console.error("[Firebase] Error disabling network during boot:", e);
     }
   }
 }
