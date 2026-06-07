@@ -1,4 +1,4 @@
-import { Calendar, Home, Book, LayoutGrid, History, Users, HeartHandshake } from 'lucide-react';
+import { Calendar, Home, Book, LayoutGrid, History, Users, Heart } from 'lucide-react';
 import logoImg from '../images/logo.png';
 
 interface NavbarProps {
@@ -11,9 +11,9 @@ export default function Navbar({ activeTab, setActiveTab }: NavbarProps) {
     { id: 'home', label: 'الرئيسية', icon: Home },
     { id: 'history', label: 'تاريخ الكنيسة', icon: History },
     { id: 'clergy', label: 'الآباء الكهنة', icon: Users },
+    { id: 'abona_mikhail', label: 'أبونا ميخائيل', icon: Heart },
     { id: 'readings', label: 'القراءات', icon: Book },
     { id: 'services', label: 'خدمات الكنيسة', icon: LayoutGrid },
-    { id: 'donations', label: 'التبرعات والعطاء', icon: HeartHandshake },
   ];
 
   return (
@@ -35,7 +35,7 @@ export default function Navbar({ activeTab, setActiveTab }: NavbarProps) {
             <div className="flex items-center gap-1 lg:gap-2">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
+                const isActive = activeTab.split(':')[0] === tab.id;
                 
                 return (
                   <button

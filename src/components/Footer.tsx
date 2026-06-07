@@ -1,4 +1,4 @@
-import { MapPin, Phone, Mail, ChevronLeft, Facebook, Youtube, Instagram } from 'lucide-react';
+import { MapPin, Phone, Mail, ChevronLeft, Facebook, Youtube, Instagram, Music } from 'lucide-react';
 import logoImg from '../images/logo.png';
 
 interface FooterProps {
@@ -13,6 +13,7 @@ export default function Footer({ onTabChange }: FooterProps) {
         { id: 'history', label: 'تاريخ الكنيسة' },
         { id: 'saint', label: 'شفيعنا القديس مارمرقس' },
         { id: 'clergy', label: 'الآباء الكهنة' },
+        { id: 'abona_mikhail', label: 'أبونا ميخائيل إبراهيم' },
         { id: 'gallery', label: 'معرض الصور' },
       ]
     },
@@ -20,6 +21,7 @@ export default function Footer({ onTabChange }: FooterProps) {
       title: 'الخدمات',
       links: [
         { id: 'services', label: 'خدمات الكنيسة والأنشطة' },
+        { id: 'services:society', label: 'الخدمات المجتمعية والطبية' },
       ]
     },
     {
@@ -72,8 +74,18 @@ export default function Footer({ onTabChange }: FooterProps) {
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center hover:bg-gold transition-colors text-white"
+                title="إنستغرام"
               >
                 <Instagram className="w-5 h-5" />
+              </a>
+              <a 
+                href="https://soundcloud.com/stmarkshoubra" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center hover:bg-gold transition-colors text-white"
+                title="ساوند كلاود - SoundCloud"
+              >
+                <Music className="w-5 h-5" />
               </a>
             </div>
           </div>

@@ -21,7 +21,8 @@ import {
   Filter,
   Check,
   BookOpen,
-  MessageSquare
+  MessageSquare,
+  X
 } from 'lucide-react';
 import { useSEO } from '../hooks/useSEO';
 import SocietyServiceCard from './SocietyServiceCard';
@@ -52,15 +53,27 @@ const CrossIcon = ({ className = "w-5 h-5 text-gold" }: { className?: string }) 
   </svg>
 );
 
-export default function ChurchServicesView() {
+interface ChurchServicesViewProps {
+  initialSection?: 'society' | 'spiritual' | 'tasbeha' | 'confessions' | 'education';
+}
+
+export default function ChurchServicesView({ initialSection }: ChurchServicesViewProps = {}) {
   useSEO({
     title: 'أنشطة وخدمات الكنيسة - كنيسة مارمرقس بشبرا',
     description: 'تعرف بالتفصيل على الخدمات الروحية والمجتمعية، مواعيد التسبحة الكنسية السنوية والكيهكية، واجتماعات التربية الكنسية ومدارس الأحد بكنيسة مارمرقس بشبرا.',
     keywords: 'مستشفى مارمرقس بشبرا, مواعيد التسبحة, الخدمات الروحية, التربية الكنسية, مدارس الأحد, اعترافات الآباء الكهنة',
   });
 
-  const [visibleSection, setVisibleSection] = useState<'society' | 'spiritual' | 'tasbeha' | 'confessions' | 'education'>('society');
-  const [meetingSearch, setMeetingSearch] = useState('');
+  const [visibleSection, setVisibleSection] = useState<'society' | 'spiritual' | 'tasbeha' | 'confessions' | 'education'>(initialSection || 'society');
+
+  useEffect(() => {
+    if (initialSection) {
+      setVisibleSection(initialSection);
+    }
+  }, [initialSection]);
+  const [selectedMeetingDay, setSelectedMeetingDay] = useState<string>('الكل');
+  const [selectedConfessionPriest, setSelectedConfessionPriest] = useState<ConfessionItem | null>(null);
+  const [societyTab, setSocietyTab] = useState<'resorts' | 'development'>('resorts');
   
   const [educationDay, setEducationDay] = useState<'الجمعة' | 'الأحد'>('الجمعة');
 
@@ -74,12 +87,19 @@ export default function ChurchServicesView() {
   ];
 
   const specialResorts = useMemo(() => {
-    return societyServices.filter(s => s.id === 'san-mark-marsa' || s.id === 'obour-land');
+    return societyServices.filter(s => s.id === 'san-mark-marsa' || s.id === 'obour-land' || s.id === 'ark-of-salvation');
   }, []);
 
   const generalSociety = useMemo(() => {
-    return societyServices.filter(s => s.id !== 'san-mark-marsa' && s.id !== 'obour-land');
+    return societyServices.filter(s => s.id !== 'san-mark-marsa' && s.id !== 'obour-land' && s.id !== 'ark-of-salvation');
   }, []);
+
+  const filteredMeetings = useMemo(() => {
+    if (selectedMeetingDay === 'الكل') return spiritualMeetings;
+    return spiritualMeetings.filter(meeting => 
+      meeting.schedule.includes(selectedMeetingDay)
+    );
+  }, [selectedMeetingDay]);
 
   // Handle tab selection with smooth scrolling to top of the content container
   const handleTabSelect = (id: 'society' | 'spiritual' | 'tasbeha' | 'confessions' | 'education') => {
@@ -88,7 +108,8 @@ export default function ChurchServicesView() {
     if (container) {
       const rect = container.getBoundingClientRect();
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      const offset = -110; // accounts for page header and sticky row
+      const isMobile = window.innerWidth < 1024;
+      const offset = isMobile ? -75 : -110; // offset based on header presence
       window.scrollTo({
         top: rect.top + scrollTop + offset,
         behavior: 'smooth'
@@ -112,23 +133,46 @@ export default function ChurchServicesView() {
         </p>
       </div>
 
-      {/* MOBILE ONLY Sticky Anchor Jumping Row */}
-      <div className="sticky top-0 z-30 lg:hidden w-full bg-white/95 backdrop-blur-md py-3 border-b border-stone-200/50 shadow-sm overflow-x-auto scrollbar-none rounded-2xl px-1">
-        <div className="flex gap-2 min-w-max px-2" dir="rtl">
+      {/* MOBILE ONLY Sticky/Embedded Vertical Navigation - Extremely readable */}
+      <div className="lg:hidden w-full bg-white border border-stone-200/80 rounded-3xl p-5 shadow-sm space-y-4" id="mobile-tabs-bar">
+        <div className="border-b border-stone-100 pb-2.5">
+          <h3 className="arabic-serif font-black text-stone-900 text-sm">أقسام الخدمات والأنشطة</h3>
+          <p className="arabic-sans text-[10px] text-stone-400 mt-1">اختر القسم الذي تود تصفحه لتحديث التفاصيل بالأسفل:</p>
+        </div>
+        
+        <div className="flex flex-col gap-2">
           {sectionList.map((sec) => {
             const isActive = visibleSection === sec.id;
             return (
               <button
                 key={sec.id}
                 onClick={() => handleTabSelect(sec.id)}
-                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl border text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                className={`w-full flex items-center justify-between p-3 rounded-2xl transition-all duration-300 text-right group border text-xs font-bold leading-none ${
                   isActive
-                    ? 'bg-stone-900 border-gold text-gold shadow-md'
-                    : 'bg-white border-stone-150 text-stone-700 hover:bg-stone-50'
+                    ? 'bg-stone-950 border-gold/40 text-gold shadow-xs'
+                    : 'bg-stone-50/60 border-stone-150 text-stone-700 hover:bg-stone-100/50'
                 }`}
               >
-                <sec.icon className="w-3.5 h-3.5 shrink-0" />
-                <span className="arabic-sans leading-none">{sec.label}</span>
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className={`w-8.5 h-8.5 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                    isActive ? 'bg-gold/15 text-gold' : 'bg-white text-stone-500 border border-stone-200'
+                  }`}>
+                    <sec.icon className="w-4 h-4" />
+                  </div>
+                  <div className="flex flex-col text-right leading-tight max-w-[180px] sm:max-w-xs min-w-0">
+                    <span className="arabic-serif text-xs sm:text-sm font-black truncate">{sec.label}</span>
+                    <span className={`arabic-sans text-[9px] mt-1 font-medium truncate ${isActive ? 'text-stone-300' : 'text-stone-400'}`}>
+                      {sec.desc}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {isActive ? (
+                    <span className="w-2 h-2 rounded-full bg-gold animate-pulse" />
+                  ) : (
+                    <span className="text-[10px] text-stone-300">←</span>
+                  )}
+                </div>
               </button>
             );
           })}
@@ -194,129 +238,162 @@ export default function ChurchServicesView() {
               {/* ======================= SECTION 1: SERVICES (SOCIETY) ======================= */}
               {visibleSection === 'society' && (
                 <section id="section-society" className="space-y-8">
-                  <div className="bg-gradient-to-br from-white to-stone-50/50 border border-stone-150 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-sm">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-900 flex items-center justify-center">
-                          <HeartHandshake className="w-5.5 h-5.5 text-gold" />
+                  {/* Clean, Premium Side-by-side Segmented Controls */}
+                  <div className="grid grid-cols-2 gap-2 w-full bg-stone-100/80 p-1.5 rounded-[1.25rem] border border-stone-200/60" id="society-sub-tabs" dir="rtl">
+                    <button
+                      onClick={() => setSocietyTab('resorts')}
+                      className={`py-3.5 px-2 text-center rounded-xl text-[11px] sm:text-xs md:text-sm font-bold transition-all duration-200 cursor-pointer select-none leading-snug ${
+                        societyTab === 'resorts'
+                          ? 'bg-stone-950 text-gold shadow-3xs'
+                          : 'text-stone-600 hover:text-stone-905 hover:bg-white/50'
+                      }`}
+                    >
+                      <span className="arabic-serif">بيوت المؤتمرات والمصايف والرحلات الخارجية</span>
+                    </button>
+                    <button
+                      onClick={() => setSocietyTab('development')}
+                      className={`py-3.5 px-2 text-center rounded-xl text-[11px] sm:text-xs md:text-sm font-bold transition-all duration-200 cursor-pointer select-none leading-snug ${
+                        societyTab === 'development'
+                          ? 'bg-stone-950 text-gold shadow-3xs'
+                          : 'text-stone-600 hover:text-stone-905 hover:bg-white/50'
+                      }`}
+                    >
+                      <span className="arabic-serif">الخدمات التنموية والطبية والتأهيلية</span>
+                    </button>
+                  </div>
+
+                  {/* Dynamic Slide-in Display of Active Tab */}
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={societyTab}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -12 }}
+                      transition={{ duration: 0.2 }}
+                      className="space-y-6 pt-4"
+                    >
+                      {societyTab === 'resorts' ? (
+                        <div className="space-y-6" id="special-retreats-section">
+                          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" id="special-retreats-grid">
+                            {specialResorts.map((service) => (
+                              <SocietyServiceCard key={service.id} service={service} />
+                            ))}
+                          </div>
                         </div>
-                        <h2 className="arabic-serif text-2xl md:text-3xl font-black text-stone-950">
-                          الخدمات المجتمعية والاجتماعية
-                        </h2>
-                      </div>
-                      <p className="arabic-sans text-stone-600 text-xs sm:text-sm max-w-xl leading-relaxed">
-                        باقة من الخدمات الطبية والتنموية والرعوية وبيوت المؤتمرات ومصايف الكنيسة لدعم ورعاية شتى متطلبات الحياة والمصايف والشباب بالتنسيق المباشر.
-                      </p>
-                    </div>
-                    <span className="bg-stone-900 text-gold font-bold font-sans text-xs px-3.5 py-1.5 rounded-full border border-gold/10 shrink-0">
-                      {societyServices.length} خدمات مسجلة
-                    </span>
-                  </div>
-
-                  {/* Categorized sub-services */}
-                  <div className="space-y-12">
-                    {/* Special retreats list */}
-                    <div className="space-y-6" id="special-retreats-section">
-                      <div className="flex items-center gap-3 border-b border-stone-200 pb-3">
-                        <span className="text-xl">🏡</span>
-                        <h3 className="arabic-serif text-lg md:text-xl font-black text-stone-900">
-                          بيوت المؤتمرات والمصايف والرحلات الخارجية
-                        </h3>
-                      </div>
-                      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" id="special-retreats-grid">
-                        {specialResorts.map((service) => (
-                          <SocietyServiceCard key={service.id} service={service} />
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* General societal list */}
-                    <div className="space-y-6 pt-4" id="general-society-section">
-                      <div className="flex items-center gap-3 border-b border-stone-200 pb-3">
-                        <span className="text-xl">🏥</span>
-                        <h3 className="arabic-serif text-lg md:text-xl font-black text-stone-900">
-                          الخدمات التنموية والطبية والتأهيلية
-                        </h3>
-                      </div>
-                      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" id="general-society-grid">
-                        {generalSociety.map((service) => (
-                          <SocietyServiceCard key={service.id} service={service} />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                      ) : (
+                        <div className="space-y-6" id="general-society-section">
+                          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" id="general-society-grid">
+                            {generalSociety.map((service) => (
+                              <SocietyServiceCard key={service.id} service={service} />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
                 </section>
               )}
 
               {/* ======================= SECTION 2: SPIRITUAL SERVICES ======================= */}
               {visibleSection === 'spiritual' && (
                 <section id="section-spiritual" className="space-y-8">
-                  <div className="bg-gradient-to-br from-white to-stone-50/50 border border-stone-150 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-sm">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-900 flex items-center justify-center">
-                          <Flame className="w-5.5 h-5.5 text-gold" />
-                        </div>
-                        <h2 className="arabic-serif text-2xl md:text-3xl font-black text-stone-950">
-                          الاجتماعات الروحية الأسبوعية
-                        </h2>
-                      </div>
-                      <p className="arabic-sans text-stone-600 text-xs sm:text-sm max-w-xl leading-relaxed">
-                        جداول ومواعيد الاجتماعات الروحية ودراسة الكلمة المقدسة طوال الأسبوع ببركة صلوات الآباء الكهنة.
-                      </p>
-                    </div>
-                    <span className="bg-stone-900 text-gold font-bold font-sans text-xs px-3.5 py-1.5 rounded-full border border-gold/10 shrink-0">
-                      {spiritualMeetings.length} اجتماعات أسبوعية
-                    </span>
-                  </div>
-
                   <div className="space-y-6" id="spiritual-meetings-root">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {spiritualMeetings.map((meeting) => (
-                        <div
-                          key={meeting.id}
-                          id={`meeting-card-${meeting.id}`}
-                          className="group bg-white hover:border-gold/40 hover:bg-stone-50/25 border-2 border-stone-150 rounded-[28px] p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 shadow-sm relative overflow-hidden text-right"
-                        >
-                          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-gold to-amber-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-right" />
+                    {/* Week Days Filtration Bar */}
+                    <div className="flex flex-col items-center gap-3 bg-stone-50 border border-stone-200/60 p-5 rounded-[2rem] shadow-3xs" id="spiritual-meetings-filter-bar" dir="rtl">
+                      <div className="flex items-center gap-2 self-start mr-1 md:self-auto md:mr-0">
+                        <Filter className="w-4 h-4 text-gold" />
+                        <span className="arabic-serif text-sm font-black text-stone-900">تصفية الاجتماعات حسب اليوم:</span>
+                      </div>
+                      <div className="flex flex-wrap justify-center gap-1.5 w-full">
+                        {([
+                          { label: 'كافة الاجتماعات 📋', value: 'الكل' },
+                          { label: 'السبت 📅', value: 'السبت' },
+                          { label: 'الأحد 📅', value: 'الأحد' },
+                          { label: 'الاثنين 📅', value: 'الاثنين' },
+                          { label: 'الثلاثاء 📅', value: 'الثلاثاء' },
+                          { label: 'الأربعاء 📅', value: 'الأربعاء' },
+                          { label: 'الخميس 📅', value: 'الخميس' },
+                          { label: 'الجمعة 📅', value: 'الجمعة' }
+                        ] as const).map((day) => {
+                          const isSelected = selectedMeetingDay === day.value;
+                          return (
+                            <button
+                              key={day.value}
+                              onClick={() => setSelectedMeetingDay(day.value)}
+                              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                                isSelected
+                                  ? 'bg-stone-950 border-gold/40 text-gold shadow-3xs'
+                                  : 'bg-white border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-stone-100/50'
+                              }`}
+                            >
+                              {day.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
 
-                          <div className="space-y-3.5 text-right">
-                            <div className="space-y-1">
-                              <h4 className="arabic-serif text-xl font-black text-stone-950 group-hover:text-amber-800 transition-colors block leading-relaxed">
-                                {meeting.title}
-                              </h4>
-                              <p className="arabic-sans text-xs text-stone-500 leading-relaxed max-w-md mt-1">{meeting.desc}</p>
-                            </div>
+                    {filteredMeetings.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {filteredMeetings.map((meeting) => (
+                          <div
+                            key={meeting.id}
+                            id={`meeting-card-${meeting.id}`}
+                            className="group bg-white hover:border-gold/45 hover:bg-stone-50/25 border-2 border-stone-150 rounded-[24px] p-5.5 flex flex-col justify-between transition-all duration-300 shadow-sm relative overflow-hidden text-right"
+                          >
+                            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-gold to-amber-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-right" />
 
-                            <div className="space-y-3 pt-4 border-t border-dashed border-stone-200">
-                              <div className="flex items-center gap-3 bg-stone-50 px-3.5 py-2.5 rounded-xl border border-stone-150">
-                                <CalendarDays className="w-5 h-5 text-gold shrink-0" />
-                                <div className="flex flex-col text-right">
-                                  <span className="text-[10px] font-bold text-stone-400 arabic-sans leading-none mb-1">التوقيت</span>
-                                  <span className="arabic-sans text-xs sm:text-sm font-bold text-stone-900">{meeting.schedule}</span>
+                            <div className="space-y-2 text-right flex-1 flex flex-col justify-between">
+                              <div>
+                                {/* Compact Card Header: Title + Coordinator beside it */}
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-1 mb-0">
+                                  <h4 className="arabic-serif text-base sm:text-lg font-black text-stone-950 group-hover:text-amber-805 transition-colors block leading-relaxed">
+                                    {meeting.title}
+                                  </h4>
+                                  <span className="text-[10px] sm:text-[11px] font-bold text-amber-955 bg-amber-500/10 border border-amber-200/20 px-2.5 py-1 rounded-full shrink-0 flex items-center gap-1.5 w-fit self-start sm:self-auto arabic-sans leading-none">
+                                    <User className="w-3.5 h-3.5 text-gold shrink-0" />
+                                    <span>إشراف: {meeting.responsible}</span>
+                                  </span>
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-3 bg-amber-500/[0.02] px-3.5 py-2.5 rounded-xl border border-amber-500/[0.06]">
-                                <MapPin className="w-5 h-5 text-amber-500 shrink-0" />
-                                <div className="flex flex-col text-right">
-                                  <span className="text-[10px] font-bold text-stone-400 arabic-sans leading-none mb-1">المكان</span>
-                                  <span className="arabic-sans text-xs sm:text-sm font-semibold text-stone-700 leading-normal">{meeting.location}</span>
+                              {/* Compact Row Grid for Schedule & Location (Replacing tall stacked list, back inline) */}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 mt-2 border-t border-dashed border-stone-200">
+                                <div className="flex items-center gap-2 bg-stone-50 px-3 py-2 rounded-xl border border-stone-150 min-w-0">
+                                  <CalendarDays className="w-4 h-4 text-gold shrink-0" />
+                                  <div className="flex flex-col text-right min-w-0">
+                                    <span className="text-[9px] font-bold text-stone-400 arabic-sans mb-1 select-none">التوقيت</span>
+                                    <span className="arabic-sans text-[11px] sm:text-xs font-bold text-stone-900 whitespace-pre-line leading-relaxed" title={meeting.schedule}>{meeting.schedule}</span>
+                                  </div>
                                 </div>
-                              </div>
 
-                              <div className="flex items-center gap-3 bg-stone-50 px-3.5 py-2.5 rounded-xl border border-stone-150">
-                                <User className="w-5 h-5 text-gold shrink-0" />
-                                <div className="flex flex-col text-right">
-                                  <span className="text-[10px] font-bold text-stone-400 arabic-sans leading-none mb-1">أمانة وإشراف الخدمة</span>
-                                  <span className="arabic-sans text-xs sm:text-sm font-bold text-stone-900">{meeting.responsible}</span>
+                                <div className="flex items-center gap-2 bg-amber-500/[0.01] px-3 py-2 rounded-xl border border-amber-500/[0.05] min-w-0">
+                                  <MapPin className="w-4 h-4 text-amber-500 shrink-0" />
+                                  <div className="flex flex-col text-right min-w-0">
+                                    <span className="text-[9px] font-bold text-stone-400 arabic-sans mb-1 select-none">المكان</span>
+                                    <span className="arabic-sans text-[11px] sm:text-xs font-semibold text-stone-700 whitespace-normal leading-relaxed" title={meeting.location}>{meeting.location}</span>
+                                  </div>
                                 </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12 px-6 bg-stone-50 border border-stone-200/50 rounded-[2rem] space-y-3" id="no-filtered-meetings">
+                        <span className="text-4xl block">📆</span>
+                        <h4 className="arabic-serif text-lg font-bold text-stone-800">لا توجد اجتماعات مبرمجة في هذا اليوم</h4>
+                        <p className="arabic-sans text-xs text-stone-500 max-w-md mx-auto leading-relaxed">
+                          يرجى اختيار يوم آخر من قائمة الأيام بالأعلى لتصفح الجداول المتاحة بسهولة.
+                        </p>
+                        <button
+                          onClick={() => setSelectedMeetingDay('الكل')}
+                          className="px-4 py-2 mt-2 bg-stone-900 text-gold rounded-xl text-xs font-bold border border-gold/10 hover:bg-stone-800 transition-colors cursor-pointer"
+                        >
+                          عرض كافة الاجتماعات الكنسية
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </section>
               )}
@@ -324,49 +401,32 @@ export default function ChurchServicesView() {
               {/* ======================= SECTION 3: TASBEHA SCHEDULE ======================= */}
               {visibleSection === 'tasbeha' && (
                 <section id="section-tasbeha" className="space-y-8">
-                  <div className="bg-gradient-to-br from-white to-stone-50/50 border border-stone-150 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-sm">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-900 flex items-center justify-center">
-                          <Music className="w-5.5 h-5.5 text-gold" />
-                        </div>
-                        <h2 className="arabic-serif text-2xl md:text-3xl font-black text-stone-950">
-                          مواعيد التسبحة الكنسية السنوية
-                        </h2>
-                      </div>
-                      <p className="arabic-sans text-stone-600 text-xs sm:text-sm max-w-xl leading-relaxed">
-                        الحياة الطقسية الغنية بالتسبيح وروحانيات نصف الليل العطرة وأوقات رفع البخور العشية والمدائح المشتركة.
-                      </p>
-                    </div>
-                    <span className="bg-stone-900 text-gold font-bold font-sans text-xs px-3.5 py-1.5 rounded-full border border-gold/10 shrink-0">
-                      {tasbehaSchedule.length} مواعيد أسبوعية
-                    </span>
-                  </div>
-
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6" id="tasbeha-schedule-grid">
                     {tasbehaSchedule.map((item, idx) => (
                       <div 
                         key={idx} 
-                        className="bg-white rounded-[24px] border border-stone-200/80 hover:border-gold/30 p-6 shadow-sm overflow-hidden hover:shadow-md transition-all duration-300 flex flex-col justify-between relative group text-right"
+                        className="bg-gradient-to-br from-white to-stone-50/40 rounded-[2rem] border-2 border-stone-150 hover:border-gold/45 hover:shadow-lg hover:bg-white transition-all duration-300 flex flex-col justify-between relative group text-right p-6 sm:p-7 overflow-hidden"
                       >
-                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500/80 via-gold/80 to-amber-600/80 scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-right" />
+                        {/* Premium Dynamic Top Gradient Line */}
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-gold to-amber-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-right" />
 
                         <div className="space-y-4">
-                          <div className="flex justify-between items-center pb-3.5 border-b border-stone-100">
-                            <div className="flex items-center gap-2 bg-stone-900 text-gold px-3.5 py-1.5 rounded-xl font-bold text-xs sm:text-sm arabic-serif shadow-sm">
-                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                              يوم {item.day}
+                          {/* Top row with day badge */}
+                          <div className="flex items-center justify-between pb-3 border-b border-dashed border-stone-200/80">
+                            <div className="flex items-center gap-2 bg-stone-950 text-gold px-3.5 py-1.5 rounded-xl font-bold text-xs sm:text-sm arabic-serif shadow-xs">
+                              <span className="w-1.5 h-1.5 rounded-full bg-gold animate-ping inline-block" />
+                              <span>يوم {item.day}</span>
                             </div>
                           </div>
 
-                          <div className="space-y-2 pt-1 font-right">
-                            <h4 className="arabic-serif text-sm sm:text-base font-black text-stone-900 leading-relaxed group-hover:text-amber-700 transition-colors duration-300">
+                          <div className="space-y-2 pt-1">
+                            <h4 className="arabic-serif text-base sm:text-lg font-black text-stone-950 leading-relaxed group-hover:text-amber-850 transition-colors duration-300 min-h-[44px] flex items-center">
                               {item.type}
                             </h4>
                           </div>
                         </div>
 
-                        <div className="mt-6 pt-4 border-t border-dashed border-stone-150 space-y-3">
+                        <div className="mt-5 pt-4 border-t border-solid border-stone-100 space-y-3">
                           <div className="flex items-center gap-2 px-3 py-2 bg-stone-50 rounded-xl border border-stone-100">
                             <Clock className="w-4 h-4 text-gold shrink-0" />
                             <div className="flex flex-col text-right">
@@ -396,33 +456,16 @@ export default function ChurchServicesView() {
               {/* ======================= SECTION 4: CONFESSIONS SCHEDULE ======================= */}
               {visibleSection === 'confessions' && (
                 <section id="section-confessions" className="space-y-8">
-                  <div className="bg-gradient-to-br from-white to-stone-50/50 border border-stone-150 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-sm">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-900 flex items-center justify-center">
-                          <CheckCircle2 className="w-5.5 h-5.5 text-gold animate-none" />
-                        </div>
-                        <h2 className="arabic-serif text-2xl md:text-3xl font-black text-stone-950">
-                          سر الاعتراف والإرشاد الروحي
-                        </h2>
-                      </div>
-                      <p className="arabic-sans text-stone-600 text-xs sm:text-sm max-w-xl leading-relaxed">
-                        مواعيد وساعات جلسات اعترافات الآباء الكهنة الأجلاء طوال الأسبوع، وحجز الأكواد مع لجنة الأمانة.
-                      </p>
-                    </div>
-                    <span className="bg-stone-900 text-gold font-bold font-sans text-xs px-3.5 py-1.5 rounded-full border border-gold/10 shrink-0">
-                      {confessionList.length} آباء كهنة
-                    </span>
-                  </div>
-
                   <div className="space-y-6" id="spiritual-confessions-root">
                     {/* Grid of Priest Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="confession-unified-grid" dir="rtl">
                       {confessionList.map((c, idx) => {
+                        const hasSchedule = c.schedule.length > 0;
                         return (
                           <div 
                             key={idx} 
-                            className="bg-gradient-to-br from-white to-stone-50/50 border-2 border-stone-150 hover:border-gold/45 hover:shadow-xl rounded-[32px] p-6 shadow-sm flex flex-col justify-between transition-all duration-300 relative group overflow-hidden"
+                            onClick={() => setSelectedConfessionPriest(c)}
+                            className="bg-gradient-to-br from-white to-stone-50/50 border-2 border-stone-150 hover:border-gold/45 hover:shadow-xl rounded-[32px] p-6 shadow-sm flex flex-col justify-between transition-all duration-300 relative group overflow-hidden cursor-pointer active:scale-98"
                           >
                             {/* Premium Top Line Accent on Hover */}
                             <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-amber-500 via-gold to-amber-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-right" />
@@ -434,7 +477,7 @@ export default function ChurchServicesView() {
                                   <CrossIcon className="w-6 h-6 text-gold" />
                                 </div>
                                 <div className="text-right">
-                                  <h4 className="arabic-serif text-lg sm:text-xl font-black text-stone-950 group-hover:text-amber-800 transition-colors duration-200 leading-normal">
+                                  <h4 className="arabic-serif text-lg sm:text-xl font-black text-stone-950 group-hover:text-amber-805 transition-colors duration-200 leading-normal">
                                     {c.father}
                                   </h4>
                                   <p className="text-[11px] sm:text-xs text-stone-500 font-bold arabic-sans mt-0.5 flex items-center gap-1.5">
@@ -444,46 +487,25 @@ export default function ChurchServicesView() {
                                 </div>
                               </div>
 
-                              {/* Priest Schedule or Notes */}
-                              {c.schedule.length > 0 ? (
-                                <div className="space-y-3 pt-4 border-t border-stone-150">
-                                  <p className="text-sm sm:text-base text-stone-500 font-bold arabic-sans block mb-1">مواعيد جلسات الإرشاد والاعتراف:</p>
-                                  {c.schedule.map((slot, sIdx) => {
-                                    return (
-                                      <div 
-                                        key={sIdx} 
-                                        className="flex justify-between items-center text-sm sm:text-base p-3.5 rounded-2xl border border-stone-150/80 bg-stone-50/40 text-stone-700 hover:bg-amber-500/[0.02] hover:border-gold/30 hover:shadow-2xs transition-all duration-200"
-                                      >
-                                        <span className="font-bold px-3.5 py-1.5 rounded-xl border border-amber-200/50 text-xs sm:text-sm whitespace-nowrap leading-none bg-amber-50/70 text-amber-950 shadow-3xs select-none">
-                                          {slot.day}
-                                        </span>
-                                        <div className="flex items-center gap-2 pr-2" dir="rtl">
-                                          <Clock className="w-5 h-5 text-amber-600/70 shrink-0" />
-                                          <span className="font-bold text-stone-900 text-sm sm:text-base text-right leading-normal tracking-wide" dir="rtl">
-                                            {slot.time}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              ) : (
-                                <div className="pt-4 border-t border-stone-150 text-sm sm:text-base text-stone-605 leading-relaxed italic flex items-star gap-2 bg-stone-50/20 p-3.5 rounded-2xl">
-                                  <span className="text-gold text-sm mt-0.5 shrink-0 select-none">ℹ️</span>
-                                  <span className="font-bold text-stone-750 leading-relaxed">{c.notes}</span>
-                                </div>
-                              )}
+                              <div className="pt-3 border-t border-stone-150/50 text-right">
+                                {hasSchedule ? (
+                                  <div className="text-xs font-semibold text-stone-605 flex items-center gap-1.5 arabic-sans">
+                                    <Clock className="w-4 h-4 text-amber-600/70 shrink-0" />
+                                    <span>يتوفر مواعيد ثابتة للجلوس والاعتراف أسبوعياً</span>
+                                  </div>
+                                ) : (
+                                  <div className="text-xs font-semibold text-amber-800 flex items-center gap-1.5 arabic-sans">
+                                    <QrCode className="w-4 h-4 text-amber-700 shrink-0" />
+                                    <span>الحجز عبر تفعيل نظام الكود (QR) بالتنسيق المباشر</span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
 
-                            {/* Extra QR Reservation Note */}
-                            {(c.father.includes('بيشوي') || c.father.includes('فيلوباتير')) && (
-                              <div className="mt-5 p-3.5 bg-amber-500/[0.04] border border-amber-500/10 rounded-2xl text-amber-900 text-sm sm:text-base leading-relaxed flex items-center gap-2.5">
-                                <div className="p-1.5 bg-gold/15 rounded-xl">
-                                  <QrCode className="w-5 h-5 text-amber-700 shrink-0 animate-pulse" />
-                                </div>
-                                <span className="font-semibold arabic-sans">يتاح الحجز المسبق لجلسته عبر الأكواد (QR) لدى ممثلي لجنة الأمانة.</span>
-                              </div>
-                            )}
+                            <div className="mt-5 w-full py-3 bg-stone-900 text-gold rounded-2xl flex items-center justify-center gap-2 text-xs font-bold font-sans border border-gold/10 group-hover:bg-amber-900 group-hover:text-white transition-colors">
+                              <Clock className="w-3.5 h-3.5 shrink-0" />
+                              <span className="arabic-sans">عرض جدول المواعيد</span>
+                            </div>
                           </div>
                         );
                       })}
@@ -495,45 +517,28 @@ export default function ChurchServicesView() {
               {/* ======================= SECTION 5: EDUCATION / SUNDAY SCHOOL ======================= */}
               {visibleSection === 'education' && (
                 <section id="section-education" className="space-y-8">
-                  <div className="bg-gradient-to-br from-white to-stone-50/50 border border-stone-150 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-sm">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-900 flex items-center justify-center">
-                          <GraduationCap className="w-5.5 h-5.5 text-gold" />
-                        </div>
-                        <h2 className="arabic-serif text-2xl md:text-3xl font-black text-stone-950">
-                          التربية الكنسية ومدارس الأحد
-                        </h2>
-                      </div>
-                      <p className="arabic-sans text-stone-600 text-xs sm:text-sm max-w-xl leading-relaxed">
-                        فصول الخدمة الكرازية، والتعليم واللاهوت الكنسي للنشء والشباب من حضانة لأولى ثانوي وحتى إعداد الخدام والخريجين.
-                      </p>
-                    </div>
-
-                    <div className="bg-white border border-stone-200 p-1 rounded-2xl flex shadow-sm w-full md:w-auto shrink-0 select-none" id="education-day-switcher" dir="rtl">
-                      <button
-                        onClick={() => setEducationDay('الجمعة')}
-                        className={`flex-1 md:flex-none px-4 py-2.5 text-xs font-black rounded-xl transition-all cursor-pointer arabic-serif flex items-center justify-center gap-1.5 ${
-                          educationDay === 'الجمعة'
-                            ? 'bg-stone-900 text-gold shadow-sm'
-                            : 'text-stone-600 hover:bg-stone-50'
-                        }`}
-                      >
-                        <span>📅</span>
-                        يوم الجمعة
-                      </button>
-                      <button
-                        onClick={() => setEducationDay('الأحد')}
-                        className={`flex-1 md:flex-none px-4 py-2.5 text-xs font-black rounded-xl transition-all cursor-pointer arabic-serif flex items-center justify-center gap-1.5 ${
-                          educationDay === 'الأحد'
-                            ? 'bg-stone-900 text-gold shadow-sm'
-                            : 'text-stone-600 hover:bg-stone-50'
-                        }`}
-                      >
-                        <span>⛪</span>
-                        يوم الأحد
-                      </button>
-                    </div>
+                  {/* Clean, Premium Side-by-side Segmented Controls */}
+                  <div className="grid grid-cols-2 gap-2 w-full max-w-sm mx-auto bg-stone-100/80 p-1.5 rounded-[1.25rem] border border-stone-200/60 select-none" id="education-day-switcher" dir="rtl">
+                    <button
+                      onClick={() => setEducationDay('الجمعة')}
+                      className={`py-3.5 px-2 text-center rounded-xl text-xs sm:text-sm font-bold transition-all duration-250 cursor-pointer select-none leading-snug ${
+                        educationDay === 'الجمعة'
+                          ? 'bg-stone-950 text-gold shadow-3xs'
+                          : 'text-stone-600 hover:text-stone-905 hover:bg-white/50'
+                      }`}
+                    >
+                      <span className="arabic-serif">يوم الجمعة</span>
+                    </button>
+                    <button
+                      onClick={() => setEducationDay('الأحد')}
+                      className={`py-3.5 px-2 text-center rounded-xl text-xs sm:text-sm font-bold transition-all duration-250 cursor-pointer select-none leading-snug ${
+                        educationDay === 'الأحد'
+                          ? 'bg-stone-950 text-gold shadow-3xs'
+                          : 'text-stone-600 hover:text-stone-905 hover:bg-white/50'
+                      }`}
+                    >
+                      <span className="arabic-serif">يوم الأحد</span>
+                    </button>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="education-cards-list">
@@ -584,6 +589,90 @@ export default function ChurchServicesView() {
         </div>
 
       </div>
+
+      <AnimatePresence>
+        {selectedConfessionPriest && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedConfessionPriest(null)}
+              className="absolute inset-0 bg-stone-950/70 backdrop-blur-md cursor-pointer"
+            />
+
+            {/* Modal Content */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: 'spring', duration: 0.4 }}
+              className="relative w-full max-w-md bg-white rounded-[2.5rem] p-6 md:p-8 shadow-2xl border border-stone-200 overflow-y-auto max-h-[85vh] text-right z-10"
+              dir="rtl"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setSelectedConfessionPriest(null)}
+                className="absolute top-6 left-6 p-2 rounded-full bg-stone-100 text-stone-500 hover:bg-stone-200 transition-colors cursor-pointer z-20"
+                aria-label="إغلاق"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="space-y-6 pt-2">
+                {/* Priest Profile Header */}
+                <div className="text-center space-y-4">
+                  <div className="w-16 h-16 rounded-2xl bg-stone-900 border-2 border-gold/30 text-gold flex items-center justify-center shadow-md mx-auto">
+                    <CrossIcon className="w-8 h-8 text-gold" />
+                  </div>
+                  <div>
+                    <h3 className="arabic-serif text-2xl font-black text-stone-950">{selectedConfessionPriest.father}</h3>
+                    <p className="text-xs text-stone-500 font-bold arabic-sans mt-1">كاهن كنيسة مارمرقس بشبرا</p>
+                  </div>
+                </div>
+
+                {/* Priest Schedule or Notes */}
+                {selectedConfessionPriest.schedule.length > 0 ? (
+                  <div className="space-y-3 pt-4 border-t border-stone-150">
+                    <p className="text-sm text-stone-505 font-bold arabic-sans block mb-1">مواعيد جلسات الإرشاد والاعتراف:</p>
+                    <div className="space-y-2">
+                      {selectedConfessionPriest.schedule.map((slot, sIdx) => (
+                        <div 
+                          key={sIdx} 
+                          className="flex justify-between items-center p-3.5 rounded-2xl border border-stone-150 bg-stone-50 text-stone-700 hover:bg-gold/[0.03] transition-colors"
+                        >
+                          <span className="font-bold px-3 py-1 bg-amber-500/10 text-amber-950 border border-amber-200/30 rounded-lg text-xs">
+                            {slot.day}
+                          </span>
+                          <span className="font-bold text-stone-900 text-sm" dir="rtl">
+                            {slot.time}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="pt-4 border-t border-stone-150 text-sm text-stone-700 leading-relaxed italic flex items-start gap-2 bg-stone-50 p-4 rounded-2xl">
+                    <span className="text-gold text-sm mt-0.5 shrink-0 select-none">ℹ️</span>
+                    <span className="font-bold text-stone-800 leading-normal">{selectedConfessionPriest.notes}</span>
+                  </div>
+                )}
+
+                {/* Extra QR Reservation Note */}
+                {(selectedConfessionPriest.father.includes('بيشوي') || selectedConfessionPriest.father.includes('فيلوباتير')) && (
+                  <div className="p-4 bg-amber-500/[0.04] border border-amber-500/10 rounded-2xl text-amber-900 text-sm leading-relaxed flex items-center gap-2.5 space-x-2">
+                    <div className="p-1.5 bg-gold/15 rounded-xl ml-2">
+                      <QrCode className="w-5 h-5 text-amber-700 shrink-0 animate-pulse" />
+                    </div>
+                    <span className="font-semibold arabic-sans">يتاح الحجز المسبق لجلسته عبر الأكواد (QR) لدى ممثلي لجنة الأمانة.</span>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
     </div>
   );

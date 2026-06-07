@@ -9,6 +9,7 @@ import PatronSaintView from './components/PatronSaintView';
 import DailyReadingsView from './components/DailyReadingsView';
 import ChurchServicesView from './components/ChurchServicesView';
 import DonationsView from './components/DonationsView';
+import MikhailIbrahimView from './components/MikhailIbrahimView';
 import ContactSuggestionsModal from './components/ContactSuggestionsModal';
 import { motion, AnimatePresence } from 'motion/react';
 import { MessageSquare } from 'lucide-react';
@@ -26,14 +27,16 @@ export default function App() {
   };
 
   const renderContent = () => {
-    switch (activeTab) {
+    const [baseTab, subSection] = activeTab.split(':');
+    switch (baseTab) {
       case 'home': return <HomeView onTabChange={handleTabChange} onOpenSuggestions={() => setIsSuggestionsOpen(true)} />;
       case 'history': return <HistoryView />;
       case 'saint': return <PatronSaintView />;
       case 'readings': return <DailyReadingsView />;
-      case 'services': return <ChurchServicesView />;
+      case 'services': return <ChurchServicesView initialSection={subSection as any} />;
       case 'gallery': return <GalleryView />;
       case 'clergy': return <ClergyView />;
+      case 'abona_mikhail': return <MikhailIbrahimView />;
       case 'donations': return <DonationsView />;
       default: return <HomeView onTabChange={handleTabChange} onOpenSuggestions={() => setIsSuggestionsOpen(true)} />;
     }

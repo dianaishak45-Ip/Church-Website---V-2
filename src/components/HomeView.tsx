@@ -1,8 +1,9 @@
 import { motion } from 'motion/react';
-import { MapPin, Phone, BookOpen, ChevronLeft, Train, Bus, Car, Info, MessageSquare, HeartHandshake } from 'lucide-react';
+import { MapPin, Phone, BookOpen, ChevronLeft, Train, Bus, Car, Info, MessageSquare, HeartHandshake, Heart } from 'lucide-react';
 import { LiveStreamWidget } from './LiveStreamWidget';
 import { AnnouncementSlider } from './AnnouncementSlider';
 import heroImg from '../images/hero.jpg';
+import frMikhailIbrahimImg from '../images/fr_mikhail_ibrahim.png';
 import { useSEO } from '../hooks/useSEO';
 
 const churchInteriorImg = heroImg; // Using same hero for now as fallback or specific interior if exists
@@ -88,36 +89,44 @@ export default function HomeView({ onTabChange, onOpenSuggestions }: HomeViewPro
         <LiveStreamWidget />
       </section>
 
-
-
-      {/* Mission Section */}
-      <section className="bg-gold rounded-[2.5rem] lg:rounded-[3.5rem] p-8 lg:p-14 text-white overflow-hidden relative shadow-xl">
-        <div className="relative z-10 grid lg:grid-cols-2 gap-10 items-center">
-          <div className="space-y-4 lg:space-y-6">
-            <h2 className="arabic-serif text-2xl lg:text-4xl font-bold">رسالتنا الكنسية</h2>
-            <p className="arabic-sans text-base lg:text-lg opacity-90 leading-relaxed text-justify max-w-xl">
-              تأسست كنيستنا لتكون منارة روحية تقدم تعاليم الإنجيل والتقاليد الكنسية للأجيال المتعاقبة. نحن نؤمن بأن الكنيسة هي جماعة المؤمنين التي تسعى للنمو الروحي وخدمة المجتمع المحيط بكل حب وتفانٍ.
-            </p>
-            <div className="flex flex-wrap gap-3 pt-2">
-              <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full border border-white/20">
-                <MapPin className="w-4 h-4 text-white/80" />
-                <span className="text-xs lg:text-sm">١٣ شارع الشيخ أحمد رافع، شريف، الساحل، القاهرة</span>
-              </div>
-              <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full border border-white/20">
-                <Phone className="w-4 h-4 text-white/80" />
-                <span className="text-xs lg:text-sm">0224316533</span>
-              </div>
-            </div>
-          </div>
-          <div className="hidden lg:block relative h-72 rounded-2xl overflow-hidden border-4 border-white/10 shadow-lg">
-            <img 
-              src={heroImg} 
-              alt="Church Interior" 
-              className="w-full h-full object-cover"
-            />
-          </div>
+      {/* Father Mikhail Ibrahim Shortcut Feature Card */}
+      <section 
+        className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-stone-950 via-stone-900 to-stone-950 border border-stone-850 p-6 sm:p-8 lg:p-10 shadow-xl flex flex-col md:flex-row gap-6 md:gap-8 items-center cursor-pointer group hover:border-gold/30 transition-all duration-300"
+        onClick={() => onTabChange?.('abona_mikhail')}
+      >
+        <div className="absolute inset-0 bg-radial-gradient from-amber-500/5 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-amber-500 via-gold to-amber-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-right" />
+        
+        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border-2 border-white bg-white shrink-0 shadow-md relative z-10 flex items-center justify-center p-0.5 transition-transform duration-500 group-hover:scale-105">
+          <img 
+            src={frMikhailIbrahimImg} 
+            alt="صورة أبونا ميخائيل إبراهيم" 
+            className="w-full h-full object-contain"
+          />
         </div>
+
+        <div className="text-white space-y-3 relative z-10 flex-1 text-center md:text-right" dir="rtl">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-gold/15 text-gold border border-gold/20 rounded-full text-[10px] font-black tracking-wide uppercase select-none">
+            <Heart className="w-3.5 h-3.5 fill-gold/20 text-gold animate-pulse" />
+            <span>منارات كنيستنا المضيئة ✨</span>
+          </div>
+          <h3 className="arabic-serif text-xl sm:text-2xl font-black text-gold">أبونا القديس المعاصر القمص ميخائيل إبراهيم</h3>
+          <p className="arabic-sans text-xs sm:text-sm text-stone-300 line-clamp-2 leading-relaxed opacity-95">
+            رجل الصلاة والدموع والشفافية الروحية، الكاهن المثالي لكنيستنا والأب الروحي لمعلم الأجيال قداسة البابا شنودة الثالث الوفير. اضغط هنا للاطلاع على سيرته العطرة وتدابيره وكلماته المأثورة.
+          </p>
+        </div>
+
+        <button 
+          className="px-5 py-3 bg-white/10 hover:bg-gold hover:text-white text-gold font-bold text-xs sm:text-sm rounded-xl transition-all flex items-center gap-2 border border-gold/10 hover:border-transparent cursor-pointer whitespace-nowrap self-center font-bold font-sans"
+        >
+          <span>عرض سيرة القديس</span>
+          <ChevronLeft className="w-4 h-4" />
+        </button>
       </section>
+
+
+
+
 
       {/* Suggestions and Contact CTA Section */}
       <section className="custom-panel !p-6 lg:!p-10 flex flex-col md:flex-row items-center gap-8 group border border-gold/20 rounded-[2.5rem] relative overflow-hidden bg-stone-50">

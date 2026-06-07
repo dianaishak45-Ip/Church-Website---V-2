@@ -1,4 +1,4 @@
-import { useState, useRef, FormEvent, DragEvent, ChangeEvent } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   HeartHandshake, 
@@ -7,18 +7,10 @@ import {
   Coins, 
   Copy, 
   Check, 
-  QrCode, 
-  UploadCloud, 
-  X, 
-  FileCheck, 
-  AlertCircle, 
-  CheckCircle2, 
-  Sparkles,
   Info,
   Calendar,
   DollarSign
 } from 'lucide-react';
-import { db, collection, addDoc, serverTimestamp, isFirestoreAvailable } from '../lib/firebase';
 import { useSEO } from '../hooks/useSEO';
 
 type MethodType = 'instapay' | 'bank' | 'cash';
@@ -30,6 +22,8 @@ interface BankAccount {
   iban: string;
   swift: string;
   branch: string;
+  currency?: string;
+  churchId?: string;
 }
 
 export default function DonationsView() {
@@ -42,48 +36,31 @@ export default function DonationsView() {
   const [activeMethod, setActiveMethod] = useState<MethodType>('instapay');
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  // Form State
-  const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    amount: '',
-    destination: 'تبرع عام وعمار الكنيسة',
-    transactionRef: '',
-    transactionDate: new Date().toISOString().split('T')[0],
-    prayerRequest: '',
-  });
-
-  const [receiptImage, setReceiptImage] = useState<string | null>(null);
-  const [receiptName, setReceiptName] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-
   // Bank Data
   const bankAccounts: BankAccount[] = [
     {
-      bankName: 'البنك الأهلي المصري (NBE)',
-      accountName: 'مطرانية شبرا - كنيسة القديس مارمرقس الرسول بشبرا',
-      accountNumber: '10130701441',
-      iban: 'EG490003010100000001013070144',
-      swift: 'NBEGEGCX',
-      branch: 'فرع شبرا',
+      bankName: 'بنك كريدي أجريكول',
+      accountName: 'كنيسة مارمرقس (MAR MARCUS CHURCH)',
+      accountNumber: '11018180293666',
+      iban: 'EG270036000100011018180293666',
+      swift: 'AGRIEGCXXXX',
+      branch: 'الفرع الرئيسي',
+      currency: 'حساب بالجنيه المصري EGP',
+      churchId: '101259177'
     },
     {
-      bankName: 'بنك الإسكندرية (Alex Bank)',
-      accountName: 'كنيسة الشهيد العظيم مارمرقس الرسول بشبرا',
-      accountNumber: '144001925001',
-      iban: 'EG560022014400000144001925001',
-      swift: 'ALEXEGCX',
-      branch: 'فرع روض الفرج',
+      bankName: 'بنك كريدي أجريكول',
+      accountName: 'كنيسة مارمرقس (MAR MARCUS CHURCH)',
+      accountNumber: '11018400063244',
+      iban: 'EG930036000100011018400063244',
+      swift: 'AGRIEGCXXXX',
+      branch: 'الفرع الرئيسي',
+      currency: 'حساب بالدولار الأمريكي USD',
+      churchId: '101259177'
     }
   ];
 
-  const instapayAddress = 'stmarkshoubra@instapay';
+  const instapayAccountNum = '01015010000554';
 
   const copyToClipboard = (text: string, fieldId: string) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -92,141 +69,6 @@ export default function DonationsView() {
     }).catch(err => {
       console.error('Failed to copy text: ', err);
     });
-  };
-
-  // Image upload handling
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    processFile(file);
-  };
-
-  const processFile = (file: File | undefined) => {
-    if (!file) return;
-
-    // Check size limit (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setError('حجم الصورة كبير جداً. الحد الأقصى المسموح به هو ٥ ميجابايت.');
-      return;
-    }
-
-    // Check file type
-    if (!file.type.match(/image\/*/)) {
-      setError('يرجى اختيار صورة صالحة فقط (JPG, PNG, WebP).');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setReceiptImage(reader.result as string);
-      setReceiptName(file.name);
-      setError(null);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    processFile(file);
-  };
-
-  const removeReceipt = () => {
-    setReceiptImage(null);
-    setReceiptName(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const handleFormSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setSuccess(false);
-
-    if (!formData.amount || isNaN(Number(formData.amount)) || Number(formData.amount) <= 0) {
-      setError('يرجى إدخال مبلغ تبرع صحيح أكبر من صفر.');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const donationPayload = {
-        name: formData.name.trim() || 'فاعل خير',
-        phone: formData.phone.trim() || 'غير محدد',
-        email: formData.email.trim() || 'غير محدد',
-        amount: Number(formData.amount),
-        destination: formData.destination,
-        transactionRef: formData.transactionRef.trim() || 'غير محدد',
-        transactionDate: formData.transactionDate,
-        prayerRequest: formData.prayerRequest.trim() || 'لا يوجد',
-        method: activeMethod,
-        receiptImage: receiptImage || null,
-        receiptName: receiptName || null,
-        submittedAt: new Date().toISOString(),
-      };
-
-      // 1. Attempt writing to Firebase Firestore
-      if (isFirestoreAvailable) {
-        try {
-          await addDoc(collection(db, 'donations'), {
-            ...donationPayload,
-            createdAt: serverTimestamp()
-          });
-        } catch (fErr) {
-          console.warn('[Firestore] Saving bypassing or offline:', fErr);
-        }
-      } else {
-        console.log('[Firestore] Skipping write because client is offline or unconfigured.');
-      }
-
-      // 2. Send email notification via endpoint
-      const response = await fetch('/api/donations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(donationPayload)
-      });
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || 'حدث خطأ أثناء معالجة الطلب كنسياً.');
-      }
-
-      setSuccess(true);
-      // Reset form
-      setFormData({
-        name: '',
-        phone: '',
-        email: '',
-        amount: '',
-        destination: 'تبرع عام وعمار الكنيسة',
-        transactionRef: '',
-        transactionDate: new Date().toISOString().split('T')[0],
-        prayerRequest: '',
-      });
-      setReceiptImage(null);
-      setReceiptName(null);
-
-    } catch (err: any) {
-      console.error('Donation submission error:', err);
-      setError(
-        err.message || 'عذراً، حدث خطأ أثناء إرسال الإخطار. يرجى التحقق من اتصالك بالإنترنت والمحاولة مجدداً.'
-      );
-    } finally {
-      setLoading(false);
-    }
   };
 
   return (
@@ -257,12 +99,11 @@ export default function DonationsView() {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="purposes-list">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="purposes-list">
             {[
               { title: 'خدمة أخوة الرب والعائلات المستورة', desc: 'توزيع مساعدات شهرية وعلاج ونفقات معيشية.' },
               { title: 'عمار وصيانة مبنى الكنيسة والخدمات', desc: 'سداد فواتير المرافق، ترميمات وصيانة دورية.' },
-              { title: 'أنشطة مدارس الأحد والشباب', desc: 'تجهيز المناهج، الكورسات الروحية، والرحلات.' },
-              { title: 'احتياجات الهيكل والمذبح الشريف', desc: 'شراء كير عشور، أواني الخدمة، الأباركة، والقرابين.' }
+              { title: 'احتياجات الهيكل والمذبح', desc: 'شراء كير عشور، أواني الخدمة، الأباركة، والقرابين.' }
             ].map((purpose, idx) => (
               <div key={idx} className="flex gap-2.5 items-start bg-white p-4 rounded-xl border border-stone-100 shadow-sm hover:shadow-md transition-shadow">
                 <div className="w-5 h-5 rounded-full bg-gold/10 text-gold flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
@@ -341,8 +182,8 @@ export default function DonationsView() {
                     {[
                       'افتح تطبيق InstaPay على هاتفك المحمول.',
                       'اختر خدمة "إرسال نقود" (Send Money) من الصفحة الرئيسية.',
-                      'اضغط على خيار الدفع بواسطة "عنوان دفع IPA" (Instapay Address).',
-                      'أدخل عنوان دفع الكنيسة الرسمي الموضع بالجانب.',
+                      'اضغط على خيار الدفع بواسطة "حساب بنكي" (Bank Account).',
+                      'اختر "بنك القاهرة" ثم أدخل رقم حساب الكنيسة الرسمي الموضح بالجانب.',
                       'اكتب المبلغ المراد تحويله، ثم اضغط على إرسال وأدخل الرقم السري IPN PIN لتأكيد التحويل.'
                     ].map((step, idx) => (
                       <div key={idx} className="flex gap-3 text-xs leading-relaxed text-stone-600 font-medium">
@@ -353,13 +194,6 @@ export default function DonationsView() {
                       </div>
                     ))}
                   </div>
-                </div>
-
-                <div className="flex items-start gap-2.5 p-3 bg-amber-50/60 border border-amber-100 rounded-2xl text-stone-700 text-xs leading-relaxed">
-                  <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5 animate-pulse" />
-                  <p className="arabic-sans">
-                    <strong className="font-bold">ملاحظة هامة:</strong> بعد إتمام التحويل يرجى تصوير شاشة هاتفك (إثبات نجاح العملية) وملء "نموذج إخطار التبرع" بالأسفل لرفع الأسماء بالقداس وإدراج التبرع أوتوماتيكياً في سجلات الدفاتر للمراجعة والتدقيق الكنسي.
-                  </p>
                 </div>
               </div>
 
@@ -376,78 +210,56 @@ export default function DonationsView() {
                     </div>
                     <span className="font-sans font-bold text-xs tracking-wider uppercase text-indigo-200">Instant Payments</span>
                   </div>
-                  <div>
-                    <span className="text-[10px] bg-emerald-500 text-white font-bold arabic-sans px-2.5 py-1 rounded-full shadow-md shadow-emerald-950/20">نشط وحصري ⚡</span>
-                  </div>
                 </div>
 
                 {/* Main Visual Block */}
                 <div className="my-6 space-y-4">
-                  <div className="space-y-1">
-                    <span className="text-[9px] uppercase font-bold text-stone-300 tracking-wider">Instapay ID (IPA)</span>
-                    <div className="flex items-center justify-between bg-white/5 border border-white/10 p-3 rounded-2xl hover:bg-white/10 transition-colors">
-                      <span className="font-sans font-semibold tracking-wide text-xs sm:text-sm text-amber-300 select-all" dir="ltr">
-                        {instapayAddress}
-                      </span>
-                      <button
-                        onClick={() => copyToClipboard(instapayAddress, 'instapay')}
-                        className={`p-1.5 rounded-lg transition-all ${
-                          copiedField === 'instapay'
-                            ? 'bg-emerald-500 text-white'
-                            : 'bg-white/10 text-stone-300 hover:text-white'
-                        }`}
-                        title="نسخ العنوان"
-                      >
-                        {copiedField === 'instapay' ? (
-                          <Check className="w-4 h-4" />
-                        ) : (
-                          <Copy className="w-4 h-4" />
-                        )}
-                      </button>
+                  <div className="bg-white/5 border border-white/10 p-4 rounded-2xl space-y-3.5">
+                    <div className="flex justify-between items-center text-[10px] font-bold text-indigo-200">
+                      <span>حساب انستاباي بالبنك</span>
+                      <span>InstaPay Account</span>
                     </div>
-                  </div>
-
-                  {/* Simulated Decorative QR Code block */}
-                  <div className="flex items-center gap-4 bg-white/5 border border-white/5 p-3 rounded-2xl">
-                    {/* Simulated QR block layout */}
-                    <div className="w-16 h-16 bg-white rounded-xl p-1 shrink-0 flex flex-wrap items-center justify-center relative overflow-hidden shadow-inner">
-                      <div className="grid grid-cols-5 gap-0.5 w-[56px] h-[56px] opacity-90">
-                        {Array.from({ length: 25 }).map((_, i) => {
-                          const isFilled = (i % 2 === 0 && i !== 12) || i < 4 || i > 20 || i % 5 === 0;
-                          return (
-                            <div 
-                              key={i} 
-                              className={`w-2.5 h-2.5 rounded-xs ${isFilled ? 'bg-indigo-950' : 'bg-stone-50'}`} 
-                            />
-                          );
-                        })}
+                    
+                    <div className="space-y-2.5 text-right">
+                      <div>
+                        <span className="text-[10px] text-stone-300 block">الاسم المستفيد</span>
+                        <span className="arabic-serif font-bold text-xs text-white leading-relaxed block">كنيسه مارمرقس القبطيه الارثوذكسيه بشبرا</span>
                       </div>
-                      {/* Cross/St Mark center badge decoration */}
-                      <div className="absolute inset-0 m-auto w-5 h-5 bg-stone-900 border border-white rounded-full flex items-center justify-center text-gold text-[8px] font-bold">
-                        ✚
+                      
+                      <div className="border-t border-white/5 pt-2.5 flex justify-between items-center gap-2">
+                        <div className="space-y-0.5">
+                          <span className="text-[10px] text-stone-300 block">رقم الحساب</span>
+                          <span className="font-sans font-bold text-sm text-yellow-300 tracking-wider block">{instapayAccountNum}</span>
+                          <span className="arabic-sans text-xs text-yellow-300 font-medium block">٠١٠١٥٠١٠٠٠٠٥٥٤</span>
+                        </div>
+                        <button
+                          onClick={() => copyToClipboard(instapayAccountNum, 'instapay')}
+                          className={`p-2 rounded-xl transition-all shrink-0 ${
+                            copiedField === 'instapay'
+                              ? 'bg-emerald-500 text-white'
+                              : 'bg-white/10 hover:bg-white/20 text-stone-200 hover:text-white'
+                          }`}
+                          title="نسخ رقم التفويض/الحساب"
+                        >
+                          {copiedField === 'instapay' ? (
+                            <Check className="w-4 h-4" />
+                          ) : (
+                            <Copy className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 border-t border-white/5 pt-2.5">
+                        <div>
+                          <span className="text-[10px] text-stone-300 block">البنك</span>
+                          <span className="arabic-sans font-bold text-xs text-white">بنك القاهرة</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-stone-300 block">الفرع</span>
+                          <span className="arabic-sans font-bold text-xs text-white">فرع خلوصي</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="space-y-1 text-right">
-                      <span className="arabic-sans text-[10px] font-bold text-indigo-200">الرمز السريع للتبرع الفوري</span>
-                      <p className="arabic-sans text-[9px] text-stone-300 leading-normal">
-                        امسح الرمز بواسطة تطبيق InstaPay أو قم بطلب التحويل لعنوان الدفع مباشرة.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Card footer details */}
-                <div className="flex justify-between items-center text-[10px] text-indigo-200">
-                  <div className="text-right">
-                    <span className="opacity-60 block">اسم المستفيد الكنسي</span>
-                    <span className="arabic-serif font-bold text-white text-xs mt-0.5 block">كنيسة مارمرقس بشبرا</span>
-                  </div>
-                  <div className="text-left font-sans">
-                    <span className="opacity-60 block">Status</span>
-                    <span className="text-emerald-400 font-bold flex items-center gap-1 mt-0.5 justify-end">
-                      <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-ping" />
-                      Online
-                    </span>
                   </div>
                 </div>
               </div>
@@ -461,100 +273,154 @@ export default function DonationsView() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.3 }}
-              className="grid sm:grid-cols-2 gap-6"
+              className="space-y-6"
             >
-              {bankAccounts.map((account, idx) => (
-                <div 
-                  key={idx} 
-                  className="bg-white rounded-3xl border border-stone-200 p-6 shadow-md hover:shadow-lg transition-all flex flex-col justify-between space-y-6 relative overflow-hidden"
-                >
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-stone-50 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none" />
-                  
-                  <div className="space-y-4 relative z-10">
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-10 h-10 bg-gold/10 text-gold rounded-xl flex items-center justify-center">
-                          <Building className="w-5 h-5" />
+              {/* Bank Accounts Grid */}
+              <div className="grid sm:grid-cols-2 gap-6">
+                {bankAccounts.map((account, idx) => (
+                  <div 
+                    key={idx} 
+                    className="bg-white rounded-3xl border border-stone-200 p-6 shadow-md hover:shadow-lg transition-all flex flex-col justify-between space-y-6 relative overflow-hidden"
+                  >
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-stone-50 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none" />
+                    
+                    <div className="space-y-4 relative z-10">
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-10 h-10 bg-gold/10 text-gold rounded-xl flex items-center justify-center">
+                            <Building className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h3 className="arabic-serif text-sm font-bold text-stone-900 leading-tight">{account.bankName}</h3>
+                            <span className="text-[10px] text-stone-500 font-sans">{account.branch}</span>
+                          </div>
                         </div>
-                        <h3 className="arabic-serif text-base font-bold text-stone-900">{account.bankName}</h3>
+                        <span className="text-[10px] bg-amber-500/10 text-amber-700 font-bold arabic-sans px-2.5 py-1 rounded-full">{account.currency}</span>
                       </div>
-                      <span className="text-[10px] bg-stone-100 text-stone-500 font-sans px-2 py-0.5 rounded-md">{account.branch}</span>
+
+                      <div className="p-3 bg-stone-50 rounded-2xl border border-stone-100/80 space-y-1">
+                        <span className="text-[9px] font-bold text-stone-400 font-sans block uppercase">Account Name / اسم الحساب</span>
+                        <p className="arabic-sans text-xs font-bold text-stone-800 leading-normal">{account.accountName}</p>
+                      </div>
+
+                      {/* Church ID Field */}
+                      {account.churchId && (
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between items-center text-[10px] font-bold text-stone-400 font-sans font-sans">
+                            <span>CHURCH ID (المعرف الكنسي)</span>
+                            <span>كود التعريف</span>
+                          </div>
+                          <div className="flex items-center justify-between bg-white border border-stone-100 p-2.5 rounded-xl">
+                            <span className="font-sans font-bold text-stone-800 tracking-wider text-xs select-all">{account.churchId}</span>
+                            <button
+                              onClick={() => copyToClipboard(account.churchId!, `${idx}-churchid`)}
+                              className={`flex items-center gap-1 text-[10px] font-bold arabic-sans px-2.5 py-1 rounded-lg transition-all ${
+                                copiedField === `${idx}-churchid`
+                                  ? 'bg-emerald-500 text-white'
+                                  : 'bg-stone-100 hover:bg-gold hover:text-white text-stone-600'
+                              }`}
+                            >
+                              {copiedField === `${idx}-churchid` ? (
+                                <>
+                                  <Check className="w-3 h-3" />
+                                  <span>تم النسخ</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3 h-3" />
+                                  <span>نسخ الكود</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Account Number Field */}
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between items-center text-[10px] font-bold text-stone-400 font-sans">
+                          <span>ACCOUNT NUMBER</span>
+                          <span>رقم الحساب</span>
+                        </div>
+                        <div className="flex items-center justify-between bg-white border border-stone-100 p-2.5 rounded-xl">
+                          <span className="font-sans font-bold text-stone-800 tracking-wider text-xs select-all">{account.accountNumber}</span>
+                          <button
+                            onClick={() => copyToClipboard(account.accountNumber, `${idx}-acc`)}
+                            className={`flex items-center gap-1 text-[10px] font-bold arabic-sans px-2.5 py-1 rounded-lg transition-all ${
+                              copiedField === `${idx}-acc`
+                                ? 'bg-emerald-500 text-white'
+                                : 'bg-stone-100 hover:bg-gold hover:text-white text-stone-600'
+                            }`}
+                          >
+                            {copiedField === `${idx}-acc` ? (
+                              <>
+                                <Check className="w-3 h-3" />
+                                <span>تم النسخ</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3 h-3" />
+                                <span>نسخ الرقم</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* IBAN Field */}
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between items-center text-[10px] font-bold text-stone-400 font-sans">
+                          <span>IBAN (الآيبان الدولي)</span>
+                          <span>رقم الحساب الدولي</span>
+                        </div>
+                        <div className="flex items-center justify-between bg-white border border-stone-100 p-2.5 rounded-xl">
+                          <span className="font-sans font-bold text-stone-700 tracking-tight text-[10px] break-all max-w-[70%] select-all" dir="ltr">{account.iban}</span>
+                          <button
+                            onClick={() => copyToClipboard(account.iban, `${idx}-iban`)}
+                            className={`flex items-center gap-1 text-[10px] font-bold arabic-sans px-2.5 py-1 rounded-lg transition-all shrink-0 ${
+                              copiedField === `${idx}-iban`
+                                ? 'bg-emerald-500 text-white'
+                                : 'bg-stone-100 hover:bg-gold hover:text-white text-stone-600'
+                            }`}
+                          >
+                            {copiedField === `${idx}-iban` ? (
+                              <>
+                                <Check className="w-3 h-3" />
+                                <span>تم النسخ</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3 h-3" />
+                                <span>نسخ الحساب</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="p-3 bg-stone-50 rounded-2xl border border-stone-100/80 space-y-1">
-                      <span className="text-[9px] font-bold text-stone-400 font-sans block uppercase">Account Name / اسم الحساب</span>
-                      <p className="arabic-sans text-xs font-bold text-stone-800 leading-normal">{account.accountName}</p>
-                    </div>
-
-                    {/* Account Number Field */}
-                    <div className="space-y-1.5">
-                      <div className="flex justify-between items-center text-[10px] font-bold text-stone-400 font-sans">
-                        <span>ACCOUNT NUMBER</span>
-                        <span>رقم الحساب</span>
-                      </div>
-                      <div className="flex items-center justify-between bg-white border border-stone-100 p-2.5 rounded-xl">
-                        <span className="font-sans font-bold text-stone-800 tracking-wider text-xs select-all">{account.accountNumber}</span>
-                        <button
-                          onClick={() => copyToClipboard(account.accountNumber, `${idx}-acc`)}
-                          className={`flex items-center gap-1 text-[10px] font-bold arabic-sans px-2.5 py-1 rounded-lg transition-all ${
-                            copiedField === `${idx}-acc`
-                              ? 'bg-emerald-500 text-white'
-                              : 'bg-stone-100 hover:bg-gold hover:text-white text-stone-600'
-                          }`}
-                        >
-                          {copiedField === `${idx}-acc` ? (
-                            <>
-                              <Check className="w-3 h-3" />
-                              <span>تم النسخ</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-3 h-3" />
-                              <span>نسخ الرقم</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* IBAN Field */}
-                    <div className="space-y-1.5">
-                      <div className="flex justify-between items-center text-[10px] font-bold text-stone-400 font-sans">
-                        <span>IBAN (الآيبان الدولي)</span>
-                        <span>السويفت كود: {account.swift}</span>
-                      </div>
-                      <div className="flex items-center justify-between bg-white border border-stone-100 p-2.5 rounded-xl">
-                        <span className="font-sans font-bold text-stone-700 tracking-tight text-[10px] break-all max-w-[70%] select-all" dir="ltr">{account.iban}</span>
-                        <button
-                          onClick={() => copyToClipboard(account.iban, `${idx}-iban`)}
-                          className={`flex items-center gap-1 text-[10px] font-bold arabic-sans px-2.5 py-1 rounded-lg transition-all shrink-0 ${
-                            copiedField === `${idx}-iban`
-                              ? 'bg-emerald-500 text-white'
-                              : 'bg-stone-100 hover:bg-gold hover:text-white text-stone-600'
-                          }`}
-                        >
-                          {copiedField === `${idx}-iban` ? (
-                            <>
-                              <Check className="w-3 h-3" />
-                              <span>تم النسخ</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-3 h-3" />
-                              <span>نسخ الحساب</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
+                    <div className="border-t border-stone-100 pt-3 text-[10px] text-stone-400 flex justify-between items-center font-sans">
+                      <span>SWIFT: {account.swift}</span>
                     </div>
                   </div>
+                ))}
+              </div>
 
-                  <div className="border-t border-stone-100 pt-3 text-[10px] text-stone-400 flex justify-between items-center font-sans">
-                    <span>SWIFT: {account.swift}</span>
-                    <span className="arabic-sans">التحويل متاح محلياً ودولياً</span>
-                  </div>
+              {/* Church Address & Contact Box from flyer */}
+              <div className="bg-stone-50 border border-stone-200 p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 text-right">
+                <div className="space-y-1">
+                  <span className="arabic-sans font-bold text-xs text-stone-850 block">كنيسة الشهيد العظيم مارمرقس الرسول القبطية الارثوذكسية – بحدائق شبرا</span>
+                  <p className="arabic-sans text-stone-600 text-[11px] leading-relaxed">
+                    العنوان الرسمي: ٣٧ ش عبد اللطيف الفحام – شبرا مصر
+                  </p>
                 </div>
-              ))}
+                <div className="border-r border-stone-200 pr-4 shrink-0 font-sans py-1 text-right md:text-left md:border-r-0 md:pr-0">
+                  <span className="arabic-sans text-[10px] text-stone-400 block">رقم هاتف الكنيسة للتأكيد والاستفسار</span>
+                  <a href="tel:0222059340" className="font-sans text-xs font-bold text-stone-800 hover:text-gold block" dir="ltr">
+                    (02) 22059340
+                  </a>
+                </div>
+              </div>
             </motion.div>
           )}
 
@@ -608,287 +474,6 @@ export default function DonationsView() {
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
-
-      {/* Confirmation Form Details */}
-      <div className="grid md:grid-cols-12 gap-8 items-start" id="form-section">
-        {/* Left Side: Notice Explanation */}
-        <div className="md:col-span-4 space-y-6">
-          <div className="custom-panel !mb-0 space-y-4">
-            <h3 className="arabic-serif text-xl font-bold text-stone-900 border-b border-stone-100 pb-2.5">إثبات وإخطار التبرع</h3>
-            <p className="arabic-sans text-stone-600 text-xs leading-relaxed text-justify">
-              خطوتك لإثبات وتحصيل المعاملة عبر الإنترنت تساعد سكرتارية التدقيق المالي في التأكد من ترحيل الدفع لصندوق الرعاية أو الصندوق المختار، بالإضافة لثقة الصلوات وحفظ الدفاتر القانونية.
-            </p>
-            
-            <div className="space-y-3" id="notice-benefits">
-              <div className="flex items-start gap-2 text-xs text-stone-600">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span className="arabic-sans font-medium">تسجيل التبرع باسمك أو بصورة سرية (فاعل خير).</span>
-              </div>
-              <div className="flex items-start gap-2 text-xs text-stone-600">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span className="arabic-sans font-medium">تحديد وجه الصرف بدقة مئة في المئة.</span>
-              </div>
-              <div className="flex items-start gap-2 text-xs text-stone-600">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span className="arabic-sans font-medium">ذكر الأسماء المحددة في مذبح القداس الإلهي بطلب صلاة.</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="custom-panel !mb-0 !bg-gold/5 border !border-gold/20 flex gap-3 items-start">
-            <Sparkles className="w-5 h-5 text-gold shrink-0 mt-0.5 animate-bounce" />
-            <div className="space-y-1">
-              <h4 className="arabic-serif font-bold text-stone-850 text-sm">ذكر نفوس الراحلين والمرضى</h4>
-              <p className="arabic-sans text-[11px] text-stone-600 leading-relaxed text-justify">
-                "لأن من يعترف بي قدام الناس أعترف أنا به أيضاً قدام أبي الذي في السماوات". بمساهمتك وتبرعك، يتم تلاوة طلب صلاة خاص من قِبَل الآباء الموقرين عقب صلوات الصلح والتحاليل بالهيكل الشريف.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Side: Interactive Form */}
-        <div className="md:col-span-8">
-          <div className="custom-panel !mb-0 space-y-5" id="donation-panel">
-            <h3 className="arabic-serif text-xl font-bold text-stone-900 border-b border-stone-100 pb-3">نموذج إخطار الكنيسة بالتبرع (إثبات التحويل)</h3>
-            
-            <form onSubmit={handleFormSubmit} className="space-y-4">
-              <div className="grid sm:grid-cols-2 gap-4">
-                {/* Name */}
-                <div className="space-y-1">
-                  <label className="arabic-sans text-xs font-bold text-stone-700">الاسم بالكامل (أو اكتب "فاعل خير")</label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="فاعل خير"
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-stone-200 outline-none focus:border-gold focus:ring-1 focus:ring-gold/10 arabic-sans"
-                  />
-                </div>
-
-                {/* Amount */}
-                <div className="space-y-1">
-                  <label className="arabic-sans text-xs font-bold text-stone-700 flex justify-between">
-                    <span>قيمة التبرع (جنيه مصري) <span className="text-red-500">*</span></span>
-                    {formData.amount && !isNaN(Number(formData.amount)) && (
-                      <span className="text-[10px] text-gold font-bold">بميزان العطاء والكرم</span>
-                    )}
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      required
-                      min="1"
-                      value={formData.amount}
-                      onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                      placeholder="500"
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-stone-200 outline-none focus:border-gold focus:ring-1 focus:ring-gold/10 text-left font-sans pr-12"
-                    />
-                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-stone-400 font-bold text-[10px]">
-                      جم (EGP)
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-4">
-                {/* Phone */}
-                <div className="space-y-1">
-                  <label className="arabic-sans text-xs font-bold text-stone-700">رقم الهاتف للتواصل أو التأكيد</label>
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="01xxxxxxxxx"
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-stone-200 outline-none focus:border-gold focus:ring-1 focus:ring-gold/10 text-left"
-                    dir="ltr"
-                  />
-                </div>
-
-                {/* Email */}
-                <div className="space-y-1">
-                  <label className="arabic-sans text-xs font-bold text-stone-700">البريد الإلكتروني (اختياري)</label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="name@domain.com"
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-stone-200 outline-none focus:border-gold focus:ring-1 focus:ring-gold/10 text-left"
-                    dir="ltr"
-                  />
-                </div>
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-4">
-                {/* Donation Destination */}
-                <div className="space-y-1">
-                  <label className="arabic-sans text-xs font-bold text-stone-700">أوجه الصرف والجهة المستهدفة للبركة</label>
-                  <select
-                    value={formData.destination}
-                    onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-stone-200 outline-none focus:border-gold focus:ring-1 focus:ring-gold/10 bg-white cursor-pointer font-medium text-stone-700 font-sans"
-                  >
-                    <option value="تبرع عام وعمار الكنيسة">تبرع عام وعمار الكنيسة 🏠</option>
-                    <option value="خدمة أخوة الرب والعائلات المستورة">خدمة أخوة الرب والعائلات المستورة 🤝</option>
-                    <option value="شراء احتياجات المذبح والهيكل الشريف">شراء احتياجات المذبح والهيكل الشريف 🏺</option>
-                    <option value="احتياجات مدارس الأحد والأنشطة والتعليم">احتياجات مدارس الأحد والأنشطة والتعليم 📖</option>
-                    <option value="علاج المرضى والعمليات الجراحية العاجلة">علاج المرضى والعمليات الجراحية العاجلة ⚕️</option>
-                  </select>
-                </div>
-
-                {/* Date */}
-                <div className="space-y-1">
-                  <label className="arabic-sans text-xs font-bold text-stone-700">تاريخ المعاملة والتحويل</label>
-                  <input
-                    type="date"
-                    required
-                    value={formData.transactionDate}
-                    onChange={(e) => setFormData({ ...formData, transactionDate: e.target.value })}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-stone-200 outline-none focus:border-gold focus:ring-1 focus:ring-gold/10 text-left font-sans"
-                  />
-                </div>
-              </div>
-
-              {/* Transaction Reference/Operation ID */}
-              <div className="space-y-1">
-                <label className="arabic-sans text-xs font-bold text-stone-700 flex justify-between">
-                  <span>الرقم المرجعي للتحويل / رقم العملية (Reference ID)</span>
-                  <span className="text-[10px] text-stone-400">موجود في إيصال إيستاباي أو إشعار البنك</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.transactionRef}
-                  onChange={(e) => setFormData({ ...formData, transactionRef: e.target.value })}
-                  placeholder="مثال: 2541249764 أو غير محدد"
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-stone-200 outline-none focus:border-gold focus:ring-1 focus:ring-gold/10 text-left font-sans"
-                  dir="ltr"
-                />
-              </div>
-
-              {/* Names to mention in liturgy */}
-              <div className="space-y-1">
-                <label className="arabic-sans text-xs font-bold text-stone-700">أسماء للذكر في القداس الإلهي والصلوات (طلبات شفاء، سفر، نجاح، نياح نفوس..)</label>
-                <textarea
-                  rows={2}
-                  value={formData.prayerRequest}
-                  onChange={(e) => setFormData({ ...formData, prayerRequest: e.target.value })}
-                  placeholder="مثال: اذكر يا رب عبيدك (فلان وفلان لطلب الشفاء)، تذكار نياح المرحوم (فلان).."
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-stone-200 outline-none focus:border-gold focus:ring-1 focus:ring-gold/10 resize-none font-medium leading-relaxed text-stone-700"
-                />
-              </div>
-
-              {/* Upload Receipt Section */}
-              <div className="space-y-1.5">
-                <label className="arabic-sans text-xs font-bold text-stone-700">صورة إيصال التحويل / لقطة الشاشة (إثبات الدفع)</label>
-                
-                {receiptImage ? (
-                  <div className="relative border border-stone-200 p-3 rounded-2xl bg-stone-50 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-lg overflow-hidden border border-stone-200 shrink-0 bg-white">
-                        <img src={receiptImage} alt="Receipt thumbnail" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                      </div>
-                      <div className="text-right">
-                        <span className="arabic-sans font-bold text-xs text-stone-850 block truncate max-w-[200px] sm:max-w-xs">{receiptName}</span>
-                        <span className="text-[10px] text-emerald-600 block flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          تم تحميل الصورة بنجاح
-                        </span>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={removeReceipt}
-                      className="p-1.5 hover:bg-red-50 hover:text-red-600 text-stone-400 rounded-full transition-colors"
-                      title="إزالة الإيصال"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <div
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all ${
-                      isDragging 
-                        ? 'border-gold bg-gold/5' 
-                        : 'border-stone-200 hover:border-gold hover:bg-stone-50/50'
-                    }`}
-                  >
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileChange}
-                      accept="image/*"
-                      className="hidden"
-                    />
-                    <UploadCloud className="w-8 h-8 text-stone-400 mx-auto mb-2 animate-bounce" />
-                    <span className="arabic-sans text-xs font-bold text-stone-700 block">اسحب وأفلت صورة الإيصال هنا، أو انقر للتصفح</span>
-                    <p className="text-[10px] text-stone-400 mt-1">الملفات المدعومة: JPG, PNG, WebP (الحد الأقصى: ٥ ميجابايت)</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Notifications Container */}
-              <AnimatePresence mode="wait">
-                {success && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.98 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl flex items-start gap-3 shadow-inner"
-                  >
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-                    <div className="space-y-1">
-                      <h4 className="arabic-serif font-bold text-emerald-950 text-sm">تم إرسال إخطار التبرع بنجاح!</h4>
-                      <p className="arabic-sans text-xs leading-relaxed opacity-90 text-justify">
-                        شكرًا لتعويضكم وعطائكم المقبول ببركة صلوات القديس والشهيد مارمرقس الرسولي. تم تسجيل المعاملة وسيتم رفع قائمة الأسماء المذكورة بالهيكل الشريف لصلوات القداس الإلهي بالبركة والنعمة.
-                      </p>
-                    </div>
-                  </motion.div>
-                )}
-
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.98 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl flex items-start gap-3"
-                  >
-                    <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                    <p className="arabic-sans text-xs leading-relaxed font-semibold">
-                      {error}
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Submit button */}
-              <button
-                type="submit"
-                disabled={loading}
-                className={`w-full py-3 px-4 rounded-2xl font-bold arabic-sans flex items-center justify-center gap-2 text-white shadow-md hover:shadow-lg transition-all text-xs cursor-pointer ${
-                  loading
-                    ? 'bg-stone-400 cursor-not-allowed'
-                    : 'bg-stone-900 hover:bg-gold'
-                }`}
-              >
-                {loading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>جاري معالجة وإرسال إثبات التبرع...</span>
-                  </>
-                ) : (
-                  <>
-                    <FileCheck className="w-4.5 h-4.5" />
-                    <span>تأكيد وإرسال إخطار التبرع وعرض الطلبات</span>
-                  </>
-                )}
-              </button>
-            </form>
-          </div>
-        </div>
       </div>
     </div>
   );

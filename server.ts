@@ -23,7 +23,7 @@ const _dirname = getDirname();
 
 const isBundled = path.basename(path.resolve(_dirname)) === 'dist';
 const isProd = process.env.NODE_ENV === 'production' || isBundled;
-const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
+const PORT = 3000;
 
 // Root health checks for Cloud Run - Must be FIRST
 app.all('/healthz', (req, res) => res.status(200).send('OK'));
