@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { BookOpen, Star, Heart, Award, ArrowUpRight, Flame } from 'lucide-react';
 import { useSEO } from '../hooks/useSEO';
-import frMikhailIbrahimImg from '../images/fr_mikhail_ibrahim.png';
+import frMikhailIbrahimImg from '../assets/images/fr_mikhail_ibrahim.png';
 
 export default function MikhailIbrahimView() {
   useSEO({

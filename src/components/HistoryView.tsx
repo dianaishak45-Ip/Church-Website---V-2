@@ -10,6 +10,10 @@ import logoImg from '../images/logo.png';
 const PriestCard: React.FC<{ father: Priest, onSelect: (p: Priest) => void }> = ({ father, onSelect }) => {
   const [hasError, setHasError] = useState(false);
 
+  React.useEffect(() => {
+    setHasError(false);
+  }, [father.image]);
+
   const getInitials = (name: string) => {
     const parts = name.split(' ');
     if (parts.length >= 2) {
@@ -18,6 +22,10 @@ const PriestCard: React.FC<{ father: Priest, onSelect: (p: Priest) => void }> = 
     return name[0];
   };
 
+  const initials = getInitials(father.name);
+
+  const showFallback = !father.image || hasError;
+
   return (
     <motion.div 
       whileHover={{ y: -10 }}
@@ -25,23 +33,22 @@ const PriestCard: React.FC<{ father: Priest, onSelect: (p: Priest) => void }> = 
       className="custom-panel !p-6 !mb-0 text-center space-y-4 transition-all cursor-pointer group"
     >
       <div className="relative w-32 h-32 mx-auto rounded-2xl overflow-hidden shadow-md border-4 border-white bg-stone-50 flex items-center justify-center">
-        {father.image && !hasError ? (
+        {showFallback ? (
+          <div className="absolute inset-0 bg-gradient-to-br from-stone-100 to-stone-200 flex flex-col items-center justify-center z-0 transition-opacity duration-300">
+            <Users className="w-8 h-8 text-stone-300 mb-1" />
+            <span className="text-[10px] font-bold text-stone-400 uppercase tracking-tighter opacity-50">
+              {initials}
+            </span>
+          </div>
+        ) : (
           <img 
             src={father.image}
             alt={father.name}
-            className="w-full h-full object-contain group-hover:scale-110 transition-all duration-500"
+            className="w-full h-full object-contain relative z-10 bg-white group-hover:scale-110 transition-all duration-500"
             onError={() => {
               setHasError(true);
             }}
-            loading="lazy"
           />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-stone-100 to-stone-200 flex flex-col items-center justify-center">
-            <Users className="w-8 h-8 text-stone-300 mb-1" />
-            <span className="text-[10px] font-bold text-stone-400 uppercase tracking-tighter opacity-50">
-              {getInitials(father.name)}
-            </span>
-          </div>
         )}
       </div>
       <h3 className="arabic-serif text-xl font-bold text-stone-800">{father.name}</h3>

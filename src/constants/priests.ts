@@ -1,24 +1,23 @@
-import frMarkosImg from '../images/fr_markos_dawoud.png';
-import frEstafanosImg from '../images/fr_estafanos_azer.png';
-import frYoussefImg from '../images/fr_youssef_youssef.png';
-import frMorkosMonirImg from '../images/fr_morkos_monir.png';
-import frMataJosephImg from '../images/fr_mata_joseph.png';
-import frYouhanaSaadImg from '../images/fr_youhana_saad.jpeg';
-import frLokaFahmyImg from '../images/fr_loka_fahmy.png';
-import frMinaMikhail from '../images/fr_mina_mikhail.png';
-import frMikhailIbrahimImg from '../images/fr_mikhail_ibrahim.png';
-import frMikhailNaguibImg from '../images/fr_mikhail_naguib.png';
-import frBemanGeorgeImg from '../images/fr_beman_george.png';
-import frMorkosFathyImg from '../images/fr_morkos_fathy.png';
-import frLukaKostantinImg from '../images/fr_luka_kostantin.png';
-import frMikhailMakarImg from '../images/fr_mikhail_makar.png';
-import frBarsoumBoshraImg from '../images/fr_barsoum_boshra.png';
-import frKyrillosKamalImg from '../images/fr_kyrillos_kamal.png';
-import frAntoniosMofeedImg from '../images/fr_antonios_mofeed.png';
-import frBishoyAhdyImg from '../images/fr_bishoy_ahdy.png';
-import frYouhanaMahfouzImg from '../images/fr_youhana_mahfouz.jpg';
-import frYohanaImg from '../images/fr_yohana_girgis.jpg';
-import frPhilopaterSamyImg from '../images/fr_philopater_samy.jpg';
+import frMarkosImg from '../assets/images/fr_markos_dawoud.png';
+import frEstafanosImg from '../assets/images/fr_estafanos_azer.png';
+import frYoussefImg from '../assets/images/fr_youssef_youssef.png';
+import frMorkosMonirImg from '../assets/images/fr_morkos_monir.png';
+import frMataJosephImg from '../assets/images/fr_mata_joseph.png';
+import frYouhanaSaadImg from '../assets/images/fr_youhana_saad.png';
+import frLokaFahmyImg from '../assets/images/fr_loka_fahmy.png';
+import frMinaMikhail from '../assets/images/fr_mina_mikhail.png';
+import frMikhailIbrahimImg from '../assets/images/fr_mikhail_ibrahim.png';
+import frMikhailNaguibImg from '../assets/images/fr_mikhail_naguib.png';
+import frBemanGeorgeImg from '../assets/images/fr_beman_george.png';
+import frMorkosFathyImg from '../assets/images/fr_morkos_fathy.png';
+import frLukaKostantinImg from '../assets/images/fr_luka_kostantin.png';
+import frBarsoumBoshraImg from '../assets/images/fr_barsoum_boshra.png';
+import frKyrillosKamalImg from '../assets/images/fr_kyrillos_kamal.png';
+import frAntoniosMofeedImg from '../assets/images/fr_antonios_mofeed.png';
+import frBishoyAhdyImg from '../assets/images/fr_bishoy_ahdy.png';
+import frYouhanaMahfouzImg from '../assets/images/fr_youhana_mahfouz.jpg';
+import frYohanaImg from '../assets/images/fr_yohana_girgis.jpg';
+import frPhilopaterSamyImg from '../assets/images/fr_philopater_samy.jpg';
 
 // missing files, use undefined
 const PRIEST_PLACEHOLDER = undefined;
@@ -32,6 +31,7 @@ export interface Priest {
   image?: string;
   title?: string;
   summary?: string[];
+  birthDate?: string;
 }
 
 export const CLERGY_DATA: Priest[] = [
@@ -133,7 +133,8 @@ export const CLERGY_DATA: Priest[] = [
     promotion: '17 مارس 2017 م.',
     status: 'حالي',
     note: '',
-    image: frBemanGeorgeImg
+    image: frBemanGeorgeImg,
+    birthDate: '15 سبتمبر 1949 م.'
   },
   {
     name: 'أبونا القمص برسوم بشرى جرجس',
@@ -141,7 +142,8 @@ export const CLERGY_DATA: Priest[] = [
     promotion: '17 مارس 2017 م.',
     status: 'حالي',
     note: '',
-    image: frBarsoumBoshraImg
+    image: frBarsoumBoshraImg,
+    birthDate: '13 يونيو 1960 م.'
   },
   {
     name: 'أبونا القمص مرقس فتحي صادق حنا',
@@ -152,12 +154,13 @@ export const CLERGY_DATA: Priest[] = [
     image: frMorkosFathyImg
   },
   {
-    name: 'أبونا القس يوسف يوسف يوسف رزق',
-    ordination: '14 نوفمبر 1999 م.',
-    promotion: '',
+    name: 'أبونا القمص يوسف يوسف يوسف رزق',
+    ordination: '14 نوفمبر 2000 م.',
+    promotion: '17 مارس 2022 م.',
     status: 'حالي',
     note: '',
-    image: frYoussefImg
+    image: frYoussefImg,
+    birthDate: '13 يونيو 1961 م.'
   },
   {
     name: 'أبونا القس كيرلس كمال فخري سوريال',
@@ -165,7 +168,8 @@ export const CLERGY_DATA: Priest[] = [
     promotion: '',
     status: 'حالي',
     note: '',
-    image: frKyrillosKamalImg
+    image: frKyrillosKamalImg,
+    birthDate: '20 يناير 1974 م.'
   },
   {
     name: 'أبونا القس أنطونيوس مفيد محارب',
@@ -173,7 +177,8 @@ export const CLERGY_DATA: Priest[] = [
     promotion: '',
     status: 'حالي',
     note: '',
-    image: frAntoniosMofeedImg
+    image: frAntoniosMofeedImg,
+    birthDate: '30 يناير 1973 م.'
   },
   {
     name: 'أبونا القس ميخائيل مقار ثابت قلته',
@@ -181,7 +186,8 @@ export const CLERGY_DATA: Priest[] = [
     promotion: '',
     status: 'حالي',
     note: '',
-    image: frMikhailMakarImg
+    image: undefined,
+    birthDate: '17 يوليو 1976 م.'
   },
   {
     name: 'أبونا القس مرقس منير سمير ميخائيل',
@@ -189,7 +195,8 @@ export const CLERGY_DATA: Priest[] = [
     promotion: '',
     status: 'حالي',
     note: '',
-    image: frMorkosMonirImg
+    image: frMorkosMonirImg,
+    birthDate: '13 سبتمبر 1969 م.'
   },
   {
     name: 'أبونا القس يوحنا محفوظ',
@@ -205,7 +212,8 @@ export const CLERGY_DATA: Priest[] = [
     promotion: '',
     status: 'حالي',
     note: '',
-    image: frMataJosephImg
+    image: frMataJosephImg,
+    birthDate: '29 يوليو 1988 م.'
   },
   {
     name: 'أبونا القس لوقا فهمي',
@@ -213,7 +221,8 @@ export const CLERGY_DATA: Priest[] = [
     promotion: '',
     status: 'حالي',
     note: '',
-    image: frLokaFahmyImg
+    image: frLokaFahmyImg,
+    birthDate: '29 أغسطس 1989 م.'
   },
   {
     name: 'أبونا القس يوحنا سعد',
@@ -221,7 +230,8 @@ export const CLERGY_DATA: Priest[] = [
     promotion: '',
     status: 'حالي',
     note: '',
-    image: frYouhanaSaadImg
+    image: frYouhanaSaadImg,
+    birthDate: '3 يونيو 1991 م.'
   },
   {
     name: 'أبونا القس بيشوي عهدى',
@@ -231,7 +241,8 @@ export const CLERGY_DATA: Priest[] = [
     note: '',
     image: frBishoyAhdyImg,
     title: '',
-    summary: []
+    summary: [],
+    birthDate: '15 أبريل 1980 م.'
   },
   {
     name: 'أبونا القس فيلوباتير سامي',
@@ -239,6 +250,7 @@ export const CLERGY_DATA: Priest[] = [
     promotion: '',
     status: 'حالي',
     note: '',
-    image: frPhilopaterSamyImg
+    image: frPhilopaterSamyImg,
+    birthDate: '25 يوليو 1983 م.'
   }
 ];

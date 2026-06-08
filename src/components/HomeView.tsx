@@ -3,7 +3,7 @@ import { MapPin, Phone, BookOpen, ChevronLeft, Train, Bus, Car, Info, MessageSqu
 import { LiveStreamWidget } from './LiveStreamWidget';
 import { AnnouncementSlider } from './AnnouncementSlider';
 import heroImg from '../images/hero.jpg';
-import frMikhailIbrahimImg from '../images/fr_mikhail_ibrahim.png';
+import frMikhailIbrahimImg from '../assets/images/fr_mikhail_ibrahim.png';
 import { useSEO } from '../hooks/useSEO';
 
 const churchInteriorImg = heroImg; // Using same hero for now as fallback or specific interior if exists
